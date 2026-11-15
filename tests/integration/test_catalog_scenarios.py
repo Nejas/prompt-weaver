@@ -2,7 +2,7 @@ import json
 import grpc
 import httpx
 from generated import prompt_pb2, rules_pb2
-from gateway.main import app
+from services.gateway.main import app
 
 
 def test_catalog_and_scenario(tmp_path, monkeypatch):

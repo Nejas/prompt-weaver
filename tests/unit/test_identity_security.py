@@ -1,5 +1,5 @@
 import pytest
-from identity_service.security import hash_password, verify_password, new_token, token_hash
+from services.identity_service.security import hash_password, verify_password, new_token, token_hash
 
 
 def test_password_hash_is_salted_and_verified():

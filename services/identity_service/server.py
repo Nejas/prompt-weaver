@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import asyncpg
 import grpc
 from generated import identity_pb2 as pb, identity_pb2_grpc as rpc
-from identity_service.security import hash_password, verify_password, new_token, token_hash
+from services.identity_service.security import hash_password, verify_password, new_token, token_hash
 
 ACCESS_SECONDS = 900
 REFRESH_DAYS = 30

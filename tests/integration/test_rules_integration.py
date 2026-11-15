@@ -2,8 +2,8 @@ import json
 import grpc
 import httpx
 from generated import prompt_pb2, rules_pb2
-from gateway.main import app
-from rules_service.server import RulesService
+from services.gateway.main import app
+from services.rules_service.server import RulesService
 
 
 def test_rules_and_gateway_composition(tmp_path):

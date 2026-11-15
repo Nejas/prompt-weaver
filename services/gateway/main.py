@@ -7,7 +7,7 @@ from generated import prompt_pb2, prompt_pb2_grpc
 from generated import identity_pb2, identity_pb2_grpc
 from generated import rules_pb2, rules_pb2_grpc
 from prompt_engine import Parameter, PromptTemplate, Rule, build_prompt
-from gateway.scenarios import rule_set_for_version
+from services.gateway.scenarios import rule_set_for_version
 from fastapi import Header
 
 

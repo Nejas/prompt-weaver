@@ -1,5 +1,5 @@
 import pytest
-from prompt_service.composer import compose
+from services.prompt_service.composer import compose
 
 
 def test_substitutes_without_evaluating_user_input():

@@ -23,7 +23,7 @@ class RulesService(rules_pb2_grpc.RulesServiceServicer):
 
 async def main():
     server = grpc.aio.server()
-    rules_pb2_grpc.add_RulesServiceServicer_to_server(RulesService(os.getenv('RULES_FILE', 'rules_service/rule_sets.json')), server)
+    rules_pb2_grpc.add_RulesServiceServicer_to_server(RulesService(os.getenv('RULES_FILE', 'services/rules_service/rule_sets.json')), server)
     server.add_insecure_port('[::]:50053')
     await server.start()
     try:

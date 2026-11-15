@@ -12,8 +12,8 @@ def test_register_login_rotation_and_logout():
     import grpc
     import httpx
     from generated import identity_pb2_grpc
-    from gateway.main import app
-    from identity_service.server import IdentityService
+    from services.gateway.main import app
+    from services.identity_service.server import IdentityService
 
     async def run():
         pool = await asyncpg.create_pool(host='localhost', user='postgres', database='identity_integration_test')

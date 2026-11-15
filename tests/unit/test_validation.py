@@ -1,7 +1,7 @@
 import pytest
 
-from prompt_service.composer import compose
-from prompt_service.validation import validate_parameters
+from services.prompt_service.composer import compose
+from services.prompt_service.validation import validate_parameters
 
 
 @pytest.fixture

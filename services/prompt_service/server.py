@@ -3,7 +3,7 @@ import json
 import grpc
 from generated import prompt_pb2, prompt_pb2_grpc
 from prompt_engine import Parameter, PromptTemplate, build_prompt
-from prompt_service.repository import create_pool, get_published_template, list_published_templates
+from services.prompt_service.repository import create_pool, get_published_template, list_published_templates
 
 
 class PromptService(prompt_pb2_grpc.PromptServiceServicer):
