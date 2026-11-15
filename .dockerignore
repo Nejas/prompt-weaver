@@ -1,0 +1,15 @@
+.git
+.gitignore
+.local-deps
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.test-temp*
+.env
+.env.*
+generated
+*.egg-info
+dist
+build

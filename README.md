@@ -27,6 +27,95 @@
 
 Правила сценариев могут напоминать skills, `AGENTS.md` и rules, но платформа сама отвечает за выбор и передачу инструкций, не полагаясь на поддержку конкретного механизма моделью. Пользовательский ввод и персональный контекст рассматриваются как данные.
 
+## Структура базы данных
+
+В PostgreSQL используются две отдельные базы. Диаграммы показывают основные поля и связи; полный состав полей и ограничений находится в `database/init` и `database/migrations`.
+
+**База `identity`** — пользователи, роли и сессии:
+
+```mermaid
+erDiagram
+    users ||--o{ user_roles : has
+    roles ||--o{ user_roles : assigned
+    users ||--o{ auth_sessions : owns
+
+    users {
+        uuid id PK
+        text email
+        text password_hash
+        text status
+    }
+    roles {
+        text code PK
+        text description
+    }
+    user_roles {
+        uuid user_id PK,FK
+        text role_code PK,FK
+    }
+    auth_sessions {
+        uuid id PK
+        uuid user_id FK
+        bytea access_token_hash
+        bytea refresh_token_hash
+        timestamptz access_expires_at
+        timestamptz refresh_expires_at
+        timestamptz revoked_at
+    }
+```
+
+**База `prompts`** — каталог, версии шаблонов и таблица для будущей истории:
+
+```mermaid
+erDiagram
+    categories ||--o{ templates : contains
+    templates ||--o{ template_versions : has
+    template_versions ||--o{ template_parameters : defines
+    template_versions ||--o{ prompt_runs : used_in
+
+    categories {
+        uuid id PK
+        text name
+        text description
+    }
+    templates {
+        uuid id PK
+        uuid category_id FK
+        text slug
+        text status
+    }
+    template_versions {
+        uuid id PK
+        uuid template_id FK
+        integer version_number
+        text title
+        text body
+        text status
+        timestamptz published_at
+    }
+    template_parameters {
+        uuid id PK
+        uuid template_version_id FK
+        text name
+        text label
+        text type
+        boolean required
+        integer max_length
+        jsonb options
+        integer display_order
+    }
+    prompt_runs {
+        uuid id PK
+        uuid user_id
+        uuid template_version_id FK
+        jsonb parameters
+        text result
+        timestamptz created_at
+    }
+```
+
+`prompt_runs.user_id` содержит идентификатор пользователя из отдельной базы `identity`, поэтому внешнего ключа между базами нет. Таблица предусмотрена схемой, но сохранение истории пока не реализовано. Наборы правил и связи сценариев сейчас хранятся в JSON-файлах, а не в PostgreSQL.
+
 ## Локальный запуск
 
 Нужны Docker и Docker Compose. Конфигурация предназначена для локальной разработки.
