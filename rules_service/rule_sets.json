@@ -1,0 +1,11 @@
+[
+  {
+    "id": "teaching-basics-v1",
+    "name": "Базовое объяснение",
+    "status": "published",
+    "rules": [
+      {"id": "step-by-step", "text": "Объясняй последовательно.", "order": 10},
+      {"id": "example", "text": "Приведи практический пример.", "order": 20}
+    ]
+  }
+]

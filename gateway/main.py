@@ -5,6 +5,8 @@ from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 from generated import prompt_pb2, prompt_pb2_grpc
 from generated import identity_pb2, identity_pb2_grpc
+from generated import rules_pb2, rules_pb2_grpc
+from prompt_engine import Parameter, PromptTemplate, Rule, build_prompt
 from fastapi import Header
 
 
@@ -14,7 +16,10 @@ async def lifespan(app: FastAPI):
     app.state.prompt = prompt_pb2_grpc.PromptServiceStub(channel)
     identity_channel = grpc.aio.insecure_channel(os.getenv('IDENTITY_SERVICE_ADDRESS', 'localhost:50052'))
     app.state.identity = identity_pb2_grpc.IdentityServiceStub(identity_channel)
+    rules_channel = grpc.aio.insecure_channel(os.getenv('RULES_SERVICE_ADDRESS', 'localhost:50053'))
+    app.state.rules = rules_pb2_grpc.RulesServiceStub(rules_channel)
     yield
+    await rules_channel.close()
     await identity_channel.close()
     await channel.close()
 
@@ -30,6 +35,10 @@ class ComposeBody(BaseModel):
 class Credentials(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=1, max_length=256)
+
+
+class ComposeWithRulesBody(ComposeBody):
+    rule_set_id: str = Field(min_length=1, max_length=128)
 
 
 class TokenBody(BaseModel):
@@ -89,3 +98,34 @@ async def compose(body: ComposeBody, request: Request):
                   grpc.StatusCode.UNAVAILABLE: 503, grpc.StatusCode.DEADLINE_EXCEEDED: 504}.get(exc.code(), 500)
         raise HTTPException(status_code=status, detail=exc.details() if status != 500 else 'Internal error') from exc
     return {'template_version_id': result.template_version_id, 'prompt': result.prompt}
+
+
+async def rules_call(request, rule_set_id):
+    try:
+        return await request.app.state.rules.GetRuleSet(rules_pb2.RuleSetRequest(id=rule_set_id), timeout=5)
+    except grpc.aio.AioRpcError as exc:
+        status = {grpc.StatusCode.NOT_FOUND: 404, grpc.StatusCode.UNAVAILABLE: 503, grpc.StatusCode.DEADLINE_EXCEEDED: 504}.get(exc.code(), 500)
+        raise HTTPException(status_code=status, detail=exc.details() if status != 500 else 'Internal error') from exc
+
+
+@app.get('/api/v1/rule-sets/{rule_set_id}')
+async def get_rule_set(rule_set_id: str, request: Request):
+    result = await rules_call(request, rule_set_id)
+    return {'id': result.id, 'name': result.name, 'rules': [{'id': r.id, 'text': r.text, 'order': r.order} for r in result.rules]}
+
+
+@app.post('/api/v1/prompts/compose-with-rules')
+async def compose_with_rules(body: ComposeWithRulesBody, request: Request):
+    try:
+        template = await request.app.state.prompt.GetTemplate(prompt_pb2.TemplateRequest(template_version_id=body.template_version_id), timeout=5)
+    except grpc.aio.AioRpcError as exc:
+        status = {grpc.StatusCode.NOT_FOUND: 404, grpc.StatusCode.UNAVAILABLE: 503, grpc.StatusCode.DEADLINE_EXCEEDED: 504}.get(exc.code(), 500)
+        raise HTTPException(status_code=status, detail=exc.details() if status != 500 else 'Internal error') from exc
+    rule_set = await rules_call(request, body.rule_set_id)
+    params = [Parameter(p.name, p.type, p.required, p.max_length or None, list(p.options)) for p in template.parameters]
+    rules = [Rule(r.id, r.text, r.order) for r in rule_set.rules]
+    try:
+        result = build_prompt(PromptTemplate(template.body, params), body.parameters, rules)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {'template_version_id': template.id, 'rule_set_id': rule_set.id, 'prompt': result.text}

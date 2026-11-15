@@ -5,11 +5,16 @@ services:
     environment:
       PROMPT_SERVICE_ADDRESS: prompt-service:50051
       IDENTITY_SERVICE_ADDRESS: identity-service:50052
+      RULES_SERVICE_ADDRESS: rules-service:50053
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
       - prompt-service
       - identity-service
+      - rules-service
+  rules-service:
+    build: .
+    command: python -m rules_service.server
   prompt-service:
     build: .
     command: python -m prompt_service.server

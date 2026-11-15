@@ -4,7 +4,12 @@ package prompt.v1;
 
 service PromptService {
   rpc Compose(ComposeRequest) returns (ComposeResponse);
+  rpc GetTemplate(TemplateRequest) returns (TemplateResponse);
 }
+
+message TemplateRequest { string template_version_id = 1; }
+message ParameterDefinition { string name = 1; string type = 2; bool required = 3; int32 max_length = 4; repeated string options = 5; }
+message TemplateResponse { string id = 1; string body = 2; repeated ParameterDefinition parameters = 3; }
 
 message ComposeRequest {
   string template_version_id = 1;
