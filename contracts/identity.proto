@@ -1,0 +1,14 @@
+syntax = "proto3";
+package identity.v1;
+service IdentityService {
+  rpc Register(Credentials) returns (User);
+  rpc Login(Credentials) returns (Tokens);
+  rpc Refresh(Token) returns (Tokens);
+  rpc Logout(Token) returns (Empty);
+  rpc Me(Token) returns (User);
+}
+message Credentials { string email = 1; string password = 2; }
+message Token { string token = 1; }
+message Empty {}
+message User { string id = 1; string email = 2; repeated string roles = 3; }
+message Tokens { string access_token = 1; string refresh_token = 2; int32 expires_in = 3; }

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package prompt.v1;
+
+service PromptService {
+  rpc Compose(ComposeRequest) returns (ComposeResponse);
+}
+
+message ComposeRequest {
+  string template_version_id = 1;
+  map<string, string> parameters = 2;
+}
+
+message ComposeResponse {
+  string template_version_id = 1;
+  string prompt = 2;
+}

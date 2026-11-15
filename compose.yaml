@@ -1,0 +1,42 @@
+services:
+  gateway:
+    build: .
+    command: uvicorn gateway.main:app --host 0.0.0.0 --port 8000
+    environment:
+      PROMPT_SERVICE_ADDRESS: prompt-service:50051
+      IDENTITY_SERVICE_ADDRESS: identity-service:50052
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      - prompt-service
+      - identity-service
+  prompt-service:
+    build: .
+    command: python -m prompt_service.server
+    environment:
+      DB_HOST: postgres
+      DB_NAME: prompts
+      DB_USER: ${PROMPT_DB_USER:?Set PROMPT_DB_USER}
+      DB_PASSWORD: ${PROMPT_DB_PASSWORD:?Set PROMPT_DB_PASSWORD}
+  identity-service:
+    build: .
+    command: python -m identity_service.server
+    environment:
+      DB_HOST: postgres
+      DB_NAME: identity
+      DB_USER: ${IDENTITY_DB_USER:?Set IDENTITY_DB_USER}
+      DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?Set IDENTITY_DB_PASSWORD}
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: local-development-only
+      POSTGRES_DB: prompts
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./database/migrations:/app-migrations:ro
+  redis:
+    image: redis:7
+volumes:
+  postgres_data:
