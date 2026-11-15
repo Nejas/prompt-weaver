@@ -7,6 +7,7 @@ from generated import prompt_pb2, prompt_pb2_grpc
 from generated import identity_pb2, identity_pb2_grpc
 from generated import rules_pb2, rules_pb2_grpc
 from prompt_engine import Parameter, PromptTemplate, Rule, build_prompt
+from gateway.scenarios import rule_set_for_version
 from fastapi import Header
 
 
@@ -114,18 +115,52 @@ async def get_rule_set(rule_set_id: str, request: Request):
     return {'id': result.id, 'name': result.name, 'rules': [{'id': r.id, 'text': r.text, 'order': r.order} for r in result.rules]}
 
 
+async def prompt_call(call, message):
+    try:
+        return await call(message, timeout=5)
+    except grpc.aio.AioRpcError as exc:
+        status = {grpc.StatusCode.INVALID_ARGUMENT: 400, grpc.StatusCode.NOT_FOUND: 404, grpc.StatusCode.UNAVAILABLE: 503, grpc.StatusCode.DEADLINE_EXCEEDED: 504}.get(exc.code(), 500)
+        raise HTTPException(status_code=status, detail=exc.details() if status != 500 else 'Internal error') from exc
+
+
+@app.get('/api/v1/templates')
+async def list_templates(request: Request, limit: int = 50, offset: int = 0):
+    if not 1 <= limit <= 100 or offset < 0:
+        raise HTTPException(status_code=400, detail='Invalid pagination')
+    result = await prompt_call(request.app.state.prompt.ListTemplates, prompt_pb2.ListTemplatesRequest(limit=limit, offset=offset))
+    return {'templates': [{'id': t.id, 'title': t.title, 'description': t.description, 'category': t.category, 'slug': t.slug} for t in result.templates], 'limit': limit, 'offset': offset}
+
+
+@app.get('/api/v1/templates/{version_id}')
+async def get_template(version_id: str, request: Request):
+    t = await prompt_call(request.app.state.prompt.GetTemplate, prompt_pb2.TemplateRequest(template_version_id=version_id))
+    return {'id': t.id, 'title': t.title, 'description': t.description, 'category': t.category, 'slug': t.slug, 'body': t.body, 'parameters': [{'name': p.name, 'label': p.label, 'type': p.type, 'required': p.required, 'max_length': p.max_length or None, 'options': list(p.options)} for p in t.parameters]}
+
+
+@app.post('/api/v1/prompts/compose-scenario')
+async def compose_scenario(body: ComposeBody, request: Request):
+    template = await prompt_call(request.app.state.prompt.GetTemplate, prompt_pb2.TemplateRequest(template_version_id=body.template_version_id))
+    try:
+        rule_set_id = rule_set_for_version(template.id)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    if not rule_set_id:
+        raise HTTPException(status_code=404, detail='No rule set configured for template version')
+    return await compose_template_with_rules(template, body.parameters, request, rule_set_id)
+
+
 @app.post('/api/v1/prompts/compose-with-rules')
 async def compose_with_rules(body: ComposeWithRulesBody, request: Request):
-    try:
-        template = await request.app.state.prompt.GetTemplate(prompt_pb2.TemplateRequest(template_version_id=body.template_version_id), timeout=5)
-    except grpc.aio.AioRpcError as exc:
-        status = {grpc.StatusCode.NOT_FOUND: 404, grpc.StatusCode.UNAVAILABLE: 503, grpc.StatusCode.DEADLINE_EXCEEDED: 504}.get(exc.code(), 500)
-        raise HTTPException(status_code=status, detail=exc.details() if status != 500 else 'Internal error') from exc
-    rule_set = await rules_call(request, body.rule_set_id)
+    template = await prompt_call(request.app.state.prompt.GetTemplate, prompt_pb2.TemplateRequest(template_version_id=body.template_version_id))
+    return await compose_template_with_rules(template, body.parameters, request, body.rule_set_id)
+
+
+async def compose_template_with_rules(template, values, request, rule_set_id):
+    rule_set = await rules_call(request, rule_set_id)
     params = [Parameter(p.name, p.type, p.required, p.max_length or None, list(p.options)) for p in template.parameters]
     rules = [Rule(r.id, r.text, r.order) for r in rule_set.rules]
     try:
-        result = build_prompt(PromptTemplate(template.body, params), body.parameters, rules)
+        result = build_prompt(PromptTemplate(template.body, params), values, rules)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {'template_version_id': template.id, 'rule_set_id': rule_set.id, 'prompt': result.text}
