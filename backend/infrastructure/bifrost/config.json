@@ -1,0 +1,16 @@
+{
+  "providers": {
+    "deepseek": {
+      "keys": [
+        {
+          "name": "deepseek-primary",
+          "value": "env.DEEPSEEK_API_KEY",
+          "models": ["deepseek-flash"],
+          "weight": 1.0
+        }
+      ]
+    }
+  },
+  "config_store": {"enabled": false},
+  "client": {"enable_logging": false}
+}
