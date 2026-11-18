@@ -6,12 +6,19 @@ services:
       PROMPT_SERVICE_ADDRESS: prompt-service:50051
       IDENTITY_SERVICE_ADDRESS: identity-service:50052
       RULES_SERVICE_ADDRESS: rules-service:50053
+      BIFROST_URL: http://bifrost:8080
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
       - prompt-service
       - identity-service
       - rules-service
+  bifrost:
+    image: maximhq/bifrost:v1.5.0
+    environment:
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+    volumes:
+      - ./infrastructure/bifrost/config.json:/app/data/config.json:ro
   rules-service:
     build: .
     command: python -m services.rules_service.server
