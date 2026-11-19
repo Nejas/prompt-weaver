@@ -9,6 +9,14 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.example.project.catalog.domain.CatalogException
@@ -17,11 +25,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class HttpCatalogRepositoryTest {
-    private fun repository(handler: io.ktor.client.engine.mock.MockRequestHandler) = HttpCatalogRepository(
+    private fun repository(dispatcher: CoroutineDispatcher = Dispatchers.Unconfined, handler: io.ktor.client.engine.mock.MockRequestHandler) = HttpCatalogRepository(
         HttpClient(MockEngine(handler)) {
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
             defaultRequest { url("http://localhost/") }
-        }
+        },
+        dispatcher
     )
 
     @Test
@@ -67,6 +76,24 @@ class HttpCatalogRepositoryTest {
         val unavailable = repository { respond("", HttpStatusCode.ServiceUnavailable) }
         assertFailsWith<CatalogException.InvalidInput> { invalid.listTemplates() }
         assertFailsWith<CatalogException.Unavailable> { unavailable.listTemplates() }
+    }
+
+    @Test
+    fun requestUsesInjectedDispatcherAndPropagatesCancellation() = runTest {
+        val io = StandardTestDispatcher(testScheduler)
+        val started = CompletableDeferred<Unit>()
+        val cancelled = CompletableDeferred<Unit>()
+        val repo = repository(io) {
+            started.complete(Unit)
+            try { awaitCancellation() } finally { cancelled.complete(Unit) }
+        }
+        val job = launch(start = CoroutineStart.UNDISPATCHED) { repo.listTemplates() }
+        assertEquals(false, started.isCompleted)
+        testScheduler.runCurrent()
+        started.await()
+        job.cancelAndJoin()
+        cancelled.await()
+        assertEquals(true, job.isCancelled)
     }
 
     @Test

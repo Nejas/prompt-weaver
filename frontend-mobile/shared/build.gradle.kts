@@ -43,9 +43,11 @@ kotlin {
         }
         commonMain.dependencies {
             implementation(project(":core:network"))
+            implementation(project(":core:ui"))
             implementation(libs.koin.core)
-            implementation(libs.decompose)
-            implementation(project(":feature:catalog:presentation"))
+            implementation(libs.coroutines.core)
+            api(libs.decompose)
+            api(project(":feature:catalog:presentation"))
             implementation(project(":feature:catalog:data"))
             implementation(project(":feature:catalog:domain"))
             implementation(libs.compose.runtime)

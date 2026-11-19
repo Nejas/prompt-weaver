@@ -22,6 +22,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":feature:catalog:domain"))
             implementation(project(":core:network"))
+            implementation(libs.coroutines.core)
             implementation(libs.ktor.serialization.json)
         }
         commonTest.dependencies {

@@ -15,13 +15,15 @@ import io.ktor.http.isSuccess
 import io.ktor.http.appendPathSegments
 import io.ktor.utils.io.errors.IOException
 import kotlinx.serialization.SerializationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import org.example.project.catalog.domain.CatalogException
 import org.example.project.catalog.domain.CatalogRepository
 import org.example.project.catalog.domain.ComposedPrompt
 import org.example.project.catalog.domain.TemplateDetails
 import org.example.project.catalog.domain.TemplatePage
 
-class HttpCatalogRepository(private val client: HttpClient) : CatalogRepository {
+class HttpCatalogRepository(private val client: HttpClient, private val ioDispatcher: CoroutineDispatcher) : CatalogRepository {
     override suspend fun listTemplates(limit: Int, offset: Int): TemplatePage = request {
         client.get("api/v1/templates") {
             parameter("limit", limit)
@@ -53,7 +55,7 @@ class HttpCatalogRepository(private val client: HttpClient) : CatalogRepository 
     }
 
     private suspend fun <T> request(block: suspend () -> T): T = try {
-        block()
+        withContext(ioDispatcher) { block() }
     } catch (e: IOException) {
         throw CatalogException.Unavailable(e)
     } catch (e: SerializationException) {
