@@ -12,8 +12,12 @@ kotlin {
         namespace = "org.example.project.catalog.domain"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
+        withHostTest {}
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
         }
+    }
+    sourceSets {
+        commonTest.dependencies { implementation(libs.kotlin.test) }
     }
 }
