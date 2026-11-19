@@ -42,6 +42,9 @@ kotlin {
             implementation(libs.compose.uiTooling)
         }
         commonMain.dependencies {
+            implementation(project(":core:network"))
+            implementation(libs.koin.core)
+            implementation(libs.decompose)
             implementation(project(":feature:catalog:presentation"))
             implementation(project(":feature:catalog:data"))
             implementation(libs.compose.runtime)

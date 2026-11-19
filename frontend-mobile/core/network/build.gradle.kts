@@ -16,4 +16,13 @@ kotlin {
             jvmTarget = JvmTarget.JVM_11
         }
     }
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.json)
+        }
+        androidMain.dependencies { implementation(libs.ktor.client.android) }
+        iosMain.dependencies { implementation(libs.ktor.client.darwin) }
+    }
 }
