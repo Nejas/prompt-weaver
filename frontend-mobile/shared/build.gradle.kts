@@ -47,6 +47,7 @@ kotlin {
             implementation(libs.decompose)
             implementation(project(":feature:catalog:presentation"))
             implementation(project(":feature:catalog:data"))
+            implementation(project(":feature:catalog:domain"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
