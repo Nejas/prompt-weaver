@@ -20,6 +20,7 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.decompose)
             implementation(project(":feature:catalog:domain"))
             implementation(project(":core:ui"))
             implementation(libs.compose.runtime)
