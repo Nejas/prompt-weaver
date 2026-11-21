@@ -1,0 +1,118 @@
+package org.example.project.ui.theme
+
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.graphics.Color
+
+@Immutable
+data class CompliColors(
+    val primary: Color,
+    val primaryPressed: Color,
+    val onPrimary: Color,
+    val primaryContainer: Color,
+    val onPrimaryContainer: Color,
+    val yandex: Color,
+    val onYandex: Color,
+    val background: Color,
+    val surface: Color,
+    val surfaceContainer: Color,
+    val surfaceContainerHigh: Color,
+    val surfaceContainerHighest: Color,
+    val shimmerHighlight: Color,
+    val outline: Color,
+    val outlineVariant: Color,
+    val onSurface: Color,
+    val onSurfaceVariant: Color,
+    val onSurfaceDisabled: Color,
+    val offline: Color,
+    val pending: Color,
+    val revision: Color,
+    val approved: Color,
+    val rejected: Color,
+    val onRejected: Color,
+    val info: Color,
+    val chart1: Color,
+    val chart2: Color,
+    val chart3: Color,
+    val chart4: Color,
+    val chart5: Color,
+    val chart6: Color,
+    val chart7: Color,
+)
+
+internal val LightCompliColors = CompliColors(
+    primary = Color(0xFFFFCC00),
+    primaryPressed = Color(0xFFE6B800),
+    onPrimary = Color(0xFF191400),
+    primaryContainer = Color(0xFFFFF3C2),
+    onPrimaryContainer = Color(0xFF3D3100),
+    yandex = Color(0xFFFC3F1D),
+    onYandex = Color(0xFFFFFFFF),
+    background = Color(0xFFFFFFFF),
+    surface = Color(0xFFFAFAFA),
+    surfaceContainer = Color(0xFFF2F2F7),
+    surfaceContainerHigh = Color(0xFFE9E9EE),
+    surfaceContainerHighest = Color(0xFFDEDEE3),
+    shimmerHighlight = Color(0xFFF7F7F9),
+    outline = Color(0xFFC7C7CC),
+    outlineVariant = Color(0xFFE5E5EA),
+    onSurface = Color(0xFF000000),
+    onSurfaceVariant = Color(0xFF6C6C70),
+    onSurfaceDisabled = Color(0xFFAEAEB2),
+    offline = Color(0xFF5F6368),
+    pending = Color(0xFFFFB700),
+    revision = Color(0xFFC95000),
+    approved = Color(0xFF34C759),
+    rejected = Color(0xFFC4001A),
+    onRejected = Color(0xFFFFFFFF),
+    info = Color(0xFF0057C8),
+    chart1 = Color(0xFFFFCC00),
+    chart2 = Color(0xFF8E8E93),
+    chart3 = Color(0xFF4F4DD1),
+    chart4 = Color(0xFF2AA34A),
+    chart5 = Color(0xFFE08600),
+    chart6 = Color(0xFF35B8EE),
+    chart7 = Color(0xFFC7C7CC),
+)
+
+internal val DarkCompliColors = CompliColors(
+    primary = Color(0xFFFFCC00),
+    primaryPressed = Color(0xFFE6B800),
+    onPrimary = Color(0xFF191400),
+    primaryContainer = Color(0xFF3D3100),
+    onPrimaryContainer = Color(0xFFFFE380),
+    yandex = Color(0xFFFC3F1D),
+    onYandex = Color(0xFFFFFFFF),
+    background = Color(0xFF000000),
+    surface = Color(0xFF121212),
+    surfaceContainer = Color(0xFF1C1C1E),
+    surfaceContainerHigh = Color(0xFF2C2C2E),
+    surfaceContainerHighest = Color(0xFF3A3A3C),
+    shimmerHighlight = Color(0xFF3D3D40),
+    outline = Color(0xFF3A3A3C),
+    outlineVariant = Color(0xFF2C2C2E),
+    onSurface = Color(0xFFFFFFFF),
+    onSurfaceVariant = Color(0xFF8E8E93),
+    onSurfaceDisabled = Color(0xFF48484A),
+    offline = Color(0xFF8E8E93),
+    pending = Color(0xFFFFCC00),
+    revision = Color(0xFFFF9F0A),
+    approved = Color(0xFF34C759),
+    rejected = Color(0xFFFF453A),
+    onRejected = Color(0xFFFFFFFF),
+    info = Color(0xFF64D2FF),
+    chart1 = Color(0xFFFFCC00),
+    chart2 = Color(0xFF8E8E93),
+    chart3 = Color(0xFF5E5CE6),
+    chart4 = Color(0xFF34C759),
+    chart5 = Color(0xFFFF9F0A),
+    chart6 = Color(0xFF64D2FF),
+    chart7 = Color(0xFF3A3A3C),
+)
+
+/**
+ * Не static: палитра меняется при смене темы и плавно анимируется, а обычный
+ * composition local перерисовывает только тех, кто действительно читает цвета.
+ * Со static-версией каждый кадр анимации инвалидировал бы всё дерево целиком.
+ */
+internal val LocalCompliColors = compositionLocalOf { LightCompliColors }
