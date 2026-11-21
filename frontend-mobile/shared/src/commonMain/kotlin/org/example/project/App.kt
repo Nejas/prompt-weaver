@@ -8,11 +8,13 @@ import androidx.compose.runtime.Composable
 import com.arkivanov.decompose.ComponentContext
 import org.example.project.catalog.presentation.CatalogRoot
 import org.example.project.catalog.presentation.CatalogRootScreen
-import org.koin.core.context.GlobalContext
+import org.koin.core.component.KoinComponent
 import org.koin.core.parameter.parametersOf
 
+private object CatalogComponentFactory : KoinComponent
+
 fun createCatalogComponent(context: ComponentContext): CatalogRoot =
-    GlobalContext.get().get { parametersOf(context) }
+    CatalogComponentFactory.getKoin().get { parametersOf(context) }
 
 @Composable
 fun App(component: CatalogRoot) {
