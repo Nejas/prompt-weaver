@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
         os.getenv('BIFROST_URL', 'http://localhost:8080'),
         float(os.getenv('BIFROST_TIMEOUT_SECONDS', '30')),
     )
-    app.state.generation_model = os.getenv('BIFROST_MODEL', 'deepseek-flash')
+    app.state.generation_model = os.getenv('BIFROST_MODEL', 'gemini/gemini-3.6-flash')
     app.state.generation_rate_limiter = GenerationRateLimiter(
         int(os.getenv('GENERATION_RATE_LIMIT', '10')),
         int(os.getenv('GENERATION_RATE_WINDOW_SECONDS', '60')),
@@ -248,7 +248,7 @@ async def generate(body: GenerateBody, request: Request, authorization: str = He
         raise HTTPException(status_code=503, detail='Model gateway is unavailable')
     try:
         completion = await bifrost.create_chat_completion(
-            model=getattr(request.app.state, 'generation_model', os.getenv('BIFROST_MODEL', 'deepseek-flash')),
+            model=getattr(request.app.state, 'generation_model', os.getenv('BIFROST_MODEL', 'gemini/gemini-3.6-flash')),
             system_prompt=prompt,
             user_message=body.message,
         )
