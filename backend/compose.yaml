@@ -7,12 +7,17 @@ services:
       IDENTITY_SERVICE_ADDRESS: identity-service:50052
       RULES_SERVICE_ADDRESS: rules-service:50053
       BIFROST_URL: http://bifrost:8080
+      BIFROST_MODEL: ${BIFROST_MODEL:-deepseek-flash}
+      BIFROST_TIMEOUT_SECONDS: ${BIFROST_TIMEOUT_SECONDS:-30}
+      GENERATION_RATE_LIMIT: ${GENERATION_RATE_LIMIT:-10}
+      GENERATION_RATE_WINDOW_SECONDS: ${GENERATION_RATE_WINDOW_SECONDS:-60}
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
       - prompt-service
       - identity-service
       - rules-service
+      - bifrost
   bifrost:
     image: maximhq/bifrost:v1.5.0
     environment:
