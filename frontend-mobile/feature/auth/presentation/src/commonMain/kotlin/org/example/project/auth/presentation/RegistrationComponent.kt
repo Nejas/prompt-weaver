@@ -21,6 +21,7 @@ class RegistrationComponent(
     mainDispatcher: CoroutineDispatcher,
     private val onRegistered: () -> Unit,
     private val onBack: () -> Unit,
+    private val onLogin: () -> Unit = {},
 ) : ComponentContext by componentContext {
     private val scope = CoroutineScope(SupervisorJob() + mainDispatcher)
     private val mutableState = MutableStateFlow(RegistrationState())
@@ -33,6 +34,7 @@ class RegistrationComponent(
     fun updateEmail(value: String) = update { copy(email = value, errorMessage = null) }
     fun updatePassword(value: String) = update { copy(password = value, errorMessage = null) }
     fun back() = onBack()
+    fun login() = onLogin()
 
     fun submit() {
         val current = state.value
@@ -54,7 +56,7 @@ class RegistrationComponent(
             } catch (error: AuthException.EmailAlreadyRegistered) {
                 update { copy(isSubmitting = false, errorMessage = "Этот email уже зарегистрирован") }
             } catch (error: AuthException.RegistrationSessionNotSaved) {
-                update { copy(isSubmitting = false, errorMessage = "Аккаунт создан, но сессию сохранить не удалось. Войдите в аккаунт позже.") }
+                update { copy(isSubmitting = false, errorMessage = "Аккаунт создан, но сессию сохранить не удалось. Войдите в аккаунт.") }
             } catch (error: AuthException.Unavailable) {
                 update { copy(isSubmitting = false, errorMessage = "Сервер недоступен. Попробуйте позже") }
             } catch (error: AuthException) {

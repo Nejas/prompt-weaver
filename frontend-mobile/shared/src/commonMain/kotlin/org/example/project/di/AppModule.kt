@@ -11,6 +11,7 @@ import org.example.project.catalog.data.HttpCatalogRepository
 import org.example.project.catalog.domain.CatalogRepository
 import org.example.project.auth.domain.AuthRepository
 import org.example.project.auth.domain.TokenStore
+import org.example.project.auth.domain.SessionRepository
 import org.example.project.auth.data.SessionClient
 import org.example.project.AppRoot
 
@@ -19,8 +20,10 @@ fun appModule(gatewayBaseUrl: String, tokenStore: TokenStore) = module {
     single { GatewayConfig(gatewayBaseUrl) }
     single { createHttpClient(get()) }
     single<CatalogRepository> { HttpCatalogRepository(get(), get<DispatcherProvider>().io) }
-    single<AuthRepository> { SessionClient(get(), tokenStore) }
-    factory { (context: ComponentContext) -> AppRoot(context, get(), get(), get<DispatcherProvider>().main) }
+    single { SessionClient(get(), tokenStore) }
+    single<AuthRepository> { get<SessionClient>() }
+    single<SessionRepository> { get<SessionClient>() }
+    factory { (context: ComponentContext) -> AppRoot(context, get(), get(), get(), get<DispatcherProvider>().main) }
 }
 
 fun initializeDependencies(gatewayBaseUrl: String, tokenStore: TokenStore): Koin =

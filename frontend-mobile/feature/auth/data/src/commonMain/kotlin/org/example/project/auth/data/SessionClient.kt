@@ -23,9 +23,10 @@ import org.example.project.auth.domain.TokenStore
 import org.example.project.auth.domain.RegisteredUser
 import org.example.project.auth.domain.Registration
 import org.example.project.auth.domain.AuthRepository
+import org.example.project.auth.domain.SessionRepository
 
 /** Serializes session changes so rotating refresh tokens cannot be used concurrently. */
-class SessionClient(private val client: HttpClient, private val store: TokenStore) : AuthRepository {
+class SessionClient(private val client: HttpClient, private val store: TokenStore) : AuthRepository, SessionRepository {
     private val mutex = Mutex()
 
     override suspend fun register(registration: Registration): RegisteredUser = mutex.withLock {
@@ -65,13 +66,13 @@ class SessionClient(private val client: HttpClient, private val store: TokenStor
         }
     }
 
-    suspend fun login(email: String, password: String): SessionTokens = mutex.withLock {
+    override suspend fun login(email: String, password: String): SessionTokens = mutex.withLock {
         val tokens = requestTokens("api/v1/auth/login", LoginRequest(email.trim(), password))
         store.write(tokens)
         tokens
     }
 
-    suspend fun refresh(): SessionTokens? = mutex.withLock {
+    override suspend fun refresh(): SessionTokens? = mutex.withLock {
         val old = store.read() ?: return@withLock null
         try {
             val tokens = requestTokens("api/v1/auth/refresh", RefreshRequest(old.refreshToken))
@@ -84,9 +85,9 @@ class SessionClient(private val client: HttpClient, private val store: TokenStor
     }
 
     /** Returns false when local logout succeeded but server revocation could not be confirmed. */
-    suspend fun logout(): Boolean = mutex.withLock {
-        val old = store.read()
+    override suspend fun logout(): Boolean = mutex.withLock {
         try {
+            val old = store.read()
             if (old == null) true else {
                 val response = client.post("api/v1/auth/logout") {
                     contentType(ContentType.Application.Json)
@@ -97,6 +98,10 @@ class SessionClient(private val client: HttpClient, private val store: TokenStor
         } catch (_: IOException) {
             false
         } catch (_: HttpRequestTimeoutException) {
+            false
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
             false
         } finally {
             withContext(NonCancellable) { store.clear() }

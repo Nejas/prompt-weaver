@@ -8,6 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.arkivanov.decompose.value.subscribe
 import org.example.project.auth.presentation.RegistrationScreen
+import org.example.project.auth.presentation.LoginScreen
+import org.example.project.auth.presentation.SessionScreen
 import org.example.project.catalog.presentation.CatalogRootScreen
 
 @Composable
@@ -20,5 +22,7 @@ fun AppRootScreen(root: AppRoot) {
     when (val child = stack.active.instance) {
         is AppRoot.Child.Catalog -> CatalogRootScreen(child.component)
         is AppRoot.Child.Registration -> RegistrationScreen(child.component)
+        is AppRoot.Child.Login -> LoginScreen(child.component)
+        is AppRoot.Child.Session -> SessionScreen(child.component)
     }
 }

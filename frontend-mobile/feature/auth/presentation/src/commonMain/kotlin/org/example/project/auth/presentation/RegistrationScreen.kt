@@ -49,5 +49,6 @@ fun RegistrationScreen(component: RegistrationComponent) {
         Spacer(Modifier.height(CompliTheme.spacing.small))
         CompliPrimaryButton("Зарегистрироваться", component::submit, Modifier.fillMaxWidth(), loading = state.isSubmitting)
         CompliTextButton("Назад к каталогу", component::back, Modifier.fillMaxWidth(), enabled = !state.isSubmitting)
+        CompliTextButton("Уже есть аккаунт? Войти", component::login, Modifier.fillMaxWidth(), enabled = !state.isSubmitting)
     }
 }
