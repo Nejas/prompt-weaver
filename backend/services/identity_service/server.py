@@ -19,6 +19,10 @@ class IdentityService(rpc.IdentityServiceServicer):
         email = request.email.strip().lower()
         if len(email) > 254 or len(email.split('@')) != 2 or not all(email.split('@')):
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Invalid email')
+        first_name = request.first_name.strip()
+        last_name = request.last_name.strip()
+        if not 1 <= len(first_name) <= 100 or not 1 <= len(last_name) <= 100:
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'First name and last name are required')
         try:
             password = await asyncio.to_thread(hash_password, request.password)
         except ValueError as exc:
@@ -27,11 +31,14 @@ class IdentityService(rpc.IdentityServiceServicer):
         try:
             async with self.pool.acquire() as conn:
                 async with conn.transaction():
-                    await conn.execute('INSERT INTO users (id,email,password_hash) VALUES ($1,$2,$3)', uid, email, password)
+                    await conn.execute(
+                        'INSERT INTO users (id,email,first_name,last_name,password_hash) VALUES ($1,$2,$3,$4,$5)',
+                        uid, email, first_name, last_name, password,
+                    )
                     await conn.execute("INSERT INTO user_roles (user_id,role_code) VALUES ($1,'user')", uid)
         except asyncpg.UniqueViolationError:
             await context.abort(grpc.StatusCode.ALREADY_EXISTS, 'Email already registered')
-        return pb.User(id=str(uid), email=email, roles=['user'])
+        return pb.User(id=str(uid), email=email, first_name=first_name, last_name=last_name, roles=['user'])
 
     async def Login(self, request, context):
         async with self.pool.acquire() as conn:
@@ -59,11 +66,14 @@ class IdentityService(rpc.IdentityServiceServicer):
 
     async def Me(self, request, context):
         async with self.pool.acquire() as conn:
-            user = await conn.fetchrow("SELECT u.id,u.email FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.access_token_hash=$1 AND s.revoked_at IS NULL AND s.access_expires_at>now() AND u.status='active'", token_hash(request.token))
+            user = await conn.fetchrow("SELECT u.id,u.email,u.first_name,u.last_name FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.access_token_hash=$1 AND s.revoked_at IS NULL AND s.access_expires_at>now() AND u.status='active'", token_hash(request.token))
             if not user:
                 await context.abort(grpc.StatusCode.UNAUTHENTICATED, 'Invalid access token')
             roles = await conn.fetch('SELECT role_code FROM user_roles WHERE user_id=$1 ORDER BY role_code', user['id'])
-        return pb.User(id=str(user['id']), email=user['email'], roles=[r['role_code'] for r in roles])
+        return pb.User(
+            id=str(user['id']), email=user['email'], first_name=user['first_name'] or '',
+            last_name=user['last_name'] or '', roles=[r['role_code'] for r in roles],
+        )
 
 
 async def main():

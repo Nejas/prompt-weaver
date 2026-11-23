@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
         os.getenv('BIFROST_URL', 'http://localhost:8080'),
         float(os.getenv('BIFROST_TIMEOUT_SECONDS', '30')),
     )
-    app.state.generation_model = os.getenv('BIFROST_MODEL', 'deepseek-flash')
+    app.state.generation_model = os.getenv('BIFROST_MODEL', 'gemini/gemini-3.6-flash')
     app.state.generation_rate_limiter = GenerationRateLimiter(
         int(os.getenv('GENERATION_RATE_LIMIT', '10')),
         int(os.getenv('GENERATION_RATE_WINDOW_SECONDS', '60')),
@@ -71,6 +71,11 @@ class ComposeBody(BaseModel):
 class Credentials(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=1, max_length=256)
+
+
+class RegistrationBody(Credentials):
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
 
 
 class ComposeWithRulesBody(ComposeBody):
@@ -104,9 +109,18 @@ async def current_user(request: Request, authorization: str):
 
 
 @app.post('/api/v1/auth/register', status_code=201)
-async def register(body: Credentials, request: Request):
-    result = await identity_call(request.app.state.identity.Register, identity_pb2.Credentials(**body.model_dump()))
-    return {'id': result.id, 'email': result.email, 'roles': list(result.roles)}
+async def register(body: RegistrationBody, request: Request):
+    result = await identity_call(request.app.state.identity.Register, identity_pb2.Registration(**body.model_dump()))
+    tokens = await identity_call(
+        request.app.state.identity.Login,
+        identity_pb2.Credentials(email=body.email, password=body.password),
+    )
+    return {
+        'id': result.id, 'email': result.email, 'first_name': result.first_name,
+        'last_name': result.last_name, 'roles': list(result.roles),
+        'access_token': tokens.access_token, 'refresh_token': tokens.refresh_token,
+        'token_type': 'bearer', 'expires_in': tokens.expires_in,
+    }
 
 
 @app.post('/api/v1/auth/login')
@@ -129,7 +143,10 @@ async def logout(body: TokenBody, request: Request):
 @app.get('/api/v1/me')
 async def me(request: Request, authorization: str = Header(default='', max_length=512)):
     result = await current_user(request, authorization)
-    return {'id': result.id, 'email': result.email, 'roles': list(result.roles)}
+    return {
+        'id': result.id, 'email': result.email, 'first_name': result.first_name,
+        'last_name': result.last_name, 'roles': list(result.roles),
+    }
 
 
 @app.post('/api/v1/prompts/compose')
@@ -248,7 +265,7 @@ async def generate(body: GenerateBody, request: Request, authorization: str = He
         raise HTTPException(status_code=503, detail='Model gateway is unavailable')
     try:
         completion = await bifrost.create_chat_completion(
-            model=getattr(request.app.state, 'generation_model', os.getenv('BIFROST_MODEL', 'deepseek-flash')),
+            model=getattr(request.app.state, 'generation_model', os.getenv('BIFROST_MODEL', 'gemini/gemini-3.6-flash')),
             system_prompt=prompt,
             user_message=body.message,
         )

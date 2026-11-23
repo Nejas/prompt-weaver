@@ -1,11 +1,11 @@
 {
   "providers": {
-    "deepseek": {
+    "gemini": {
       "keys": [
         {
-          "name": "deepseek-primary",
-          "value": "env.DEEPSEEK_API_KEY",
-          "models": ["deepseek-flash"],
+          "name": "gemini-primary",
+          "value": "env.GEMINI_API_KEY",
+          "models": ["gemini-3.6-flash"],
           "weight": 1.0
         }
       ]

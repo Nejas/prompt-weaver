@@ -43,12 +43,12 @@ def test_generation_composes_prompt_and_uses_bifrost():
 
     class BifrostStub:
         async def create_chat_completion(self, *, model, system_prompt, user_message):
-            assert model == 'deepseek-flash'
+            assert model == 'gemini/gemini-3.6-flash'
             assert system_prompt == 'Explain Python clearly.'
             assert user_message == 'Explain decorators'
             return BifrostCompletion(
                 content='Decorators wrap functions.',
-                model='deepseek-flash',
+                model='gemini/gemini-3.6-flash',
                 usage={'prompt_tokens': 12, 'completion_tokens': 4},
             )
 
@@ -60,7 +60,7 @@ def test_generation_composes_prompt_and_uses_bifrost():
         app.state.identity = IdentityStub()
         app.state.prompt = PromptStub()
         app.state.bifrost = BifrostStub()
-        app.state.generation_model = 'deepseek-flash'
+        app.state.generation_model = 'gemini/gemini-3.6-flash'
         app.state.generation_rate_limiter = GenerationRateLimiter(10, 60)
         try:
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
@@ -77,7 +77,7 @@ def test_generation_composes_prompt_and_uses_bifrost():
             assert response.json() == {
                 'template_version_id': 'template-1',
                 'rule_set_id': None,
-                'model': 'deepseek-flash',
+                'model': 'gemini/gemini-3.6-flash',
                 'response': 'Decorators wrap functions.',
                 'usage': {'prompt_tokens': 12, 'completion_tokens': 4},
             }

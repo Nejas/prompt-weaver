@@ -3,6 +3,8 @@
 CREATE TABLE users (
     id uuid PRIMARY KEY,
     email text NOT NULL CHECK (length(btrim(email)) BETWEEN 3 AND 254),
+    first_name text NOT NULL CHECK (length(btrim(first_name)) BETWEEN 1 AND 100),
+    last_name text NOT NULL CHECK (length(btrim(last_name)) BETWEEN 1 AND 100),
     password_hash text NOT NULL CHECK (length(password_hash) > 0),
     status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
     created_at timestamptz NOT NULL DEFAULT now(),
