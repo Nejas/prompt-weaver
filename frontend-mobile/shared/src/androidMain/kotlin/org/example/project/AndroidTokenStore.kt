@@ -27,7 +27,8 @@ class AndroidTokenStore(context: Context) : TokenStore {
     private val file = java.io.File(directory, "auth-session")
     private val atomicFile = android.util.AtomicFile(file)
     private val alias = "prompt-weaver-session-v1"
-    private val mutex = Mutex()
+    // All instances address the same file and Keystore alias in this process.
+    private companion object { val mutex = Mutex() }
 
     private fun key(create: Boolean): SecretKey? {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -58,7 +59,10 @@ class AndroidTokenStore(context: Context) : TokenStore {
     } }
 
     override suspend fun read(): SessionTokens? = withContext(Dispatchers.IO) { mutex.withLock {
-        val stored = try { atomicFile.readFully() } catch (_: FileNotFoundException) { return@withLock null }
+        val stored = try { atomicFile.readFully() } catch (error: FileNotFoundException) {
+            if (file.exists() || java.io.File(directory, "auth-session.bak").exists()) throw error
+            return@withLock null
+        }
         run {
             val encrypted = Base64.decode(stored, Base64.NO_WRAP)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
