@@ -39,7 +39,13 @@ class Pool:
 
 def test_register_rejects_bad_email_without_database():
     with pytest.raises(Aborted) as error:
-        run_immediate(IdentityService(Pool()).Register(identity_pb2.Credentials(email='bad', password='long-password'), Context()))
+        run_immediate(IdentityService(Pool()).Register(identity_pb2.Registration(email='bad', password='long-password', first_name='Ada', last_name='Lovelace'), Context()))
+    assert error.value.code == grpc.StatusCode.INVALID_ARGUMENT
+
+
+def test_register_requires_first_and_last_name_without_database():
+    with pytest.raises(Aborted) as error:
+        run_immediate(IdentityService(Pool()).Register(identity_pb2.Registration(email='ada@example.test', password='long-password', first_name=' ', last_name='Lovelace'), Context()))
     assert error.value.code == grpc.StatusCode.INVALID_ARGUMENT
 
 

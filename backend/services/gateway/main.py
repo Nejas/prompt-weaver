@@ -73,6 +73,11 @@ class Credentials(BaseModel):
     password: str = Field(min_length=1, max_length=256)
 
 
+class RegistrationBody(Credentials):
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+
+
 class ComposeWithRulesBody(ComposeBody):
     rule_set_id: str = Field(min_length=1, max_length=128)
 
@@ -104,9 +109,18 @@ async def current_user(request: Request, authorization: str):
 
 
 @app.post('/api/v1/auth/register', status_code=201)
-async def register(body: Credentials, request: Request):
-    result = await identity_call(request.app.state.identity.Register, identity_pb2.Credentials(**body.model_dump()))
-    return {'id': result.id, 'email': result.email, 'roles': list(result.roles)}
+async def register(body: RegistrationBody, request: Request):
+    result = await identity_call(request.app.state.identity.Register, identity_pb2.Registration(**body.model_dump()))
+    tokens = await identity_call(
+        request.app.state.identity.Login,
+        identity_pb2.Credentials(email=body.email, password=body.password),
+    )
+    return {
+        'id': result.id, 'email': result.email, 'first_name': result.first_name,
+        'last_name': result.last_name, 'roles': list(result.roles),
+        'access_token': tokens.access_token, 'refresh_token': tokens.refresh_token,
+        'token_type': 'bearer', 'expires_in': tokens.expires_in,
+    }
 
 
 @app.post('/api/v1/auth/login')
@@ -129,7 +143,10 @@ async def logout(body: TokenBody, request: Request):
 @app.get('/api/v1/me')
 async def me(request: Request, authorization: str = Header(default='', max_length=512)):
     result = await current_user(request, authorization)
-    return {'id': result.id, 'email': result.email, 'roles': list(result.roles)}
+    return {
+        'id': result.id, 'email': result.email, 'first_name': result.first_name,
+        'last_name': result.last_name, 'roles': list(result.roles),
+    }
 
 
 @app.post('/api/v1/prompts/compose')

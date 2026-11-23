@@ -24,15 +24,24 @@ def test_register_login_rotation_and_logout():
         channel = grpc.aio.insecure_channel(f'127.0.0.1:{port}')
         app.state.identity = identity_pb2_grpc.IdentityServiceStub(channel)
         credentials = {'email': f'{uuid.uuid4()}@example.test', 'password': 'Long-test-password-123'}
+        registration = {**credentials, 'first_name': 'Ada', 'last_name': 'Lovelace'}
         try:
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
-                assert (await client.post('/api/v1/auth/register', json=credentials)).status_code == 201
-                assert (await client.post('/api/v1/auth/register', json=credentials)).status_code == 409
+                registered = await client.post('/api/v1/auth/register', json=registration)
+                assert registered.status_code == 201
+                assert registered.json()['first_name'] == 'Ada'
+                assert registered.json()['last_name'] == 'Lovelace'
+                assert registered.json()['access_token']
+                assert registered.json()['refresh_token']
+                assert (await client.post('/api/v1/auth/register', json=registration)).status_code == 409
                 assert (await client.post('/api/v1/auth/login', json={**credentials, 'password': 'wrong'})).status_code == 401
                 result = await client.post('/api/v1/auth/login', json=credentials)
                 assert result.status_code == 200
                 first = result.json()
-                assert (await client.get('/api/v1/me', headers={'Authorization': 'Bearer '+first['access_token']})).status_code == 200
+                current_user = await client.get('/api/v1/me', headers={'Authorization': 'Bearer '+first['access_token']})
+                assert current_user.status_code == 200
+                assert current_user.json()['first_name'] == 'Ada'
+                assert current_user.json()['last_name'] == 'Lovelace'
                 result = await client.post('/api/v1/auth/refresh', json={'refresh_token': first['refresh_token']})
                 assert result.status_code == 200
                 second = result.json()

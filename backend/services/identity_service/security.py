@@ -8,8 +8,8 @@ _N, _R, _P = 16384, 8, 1
 
 
 def hash_password(password: str) -> str:
-    if not 12 <= len(password) <= 256:
-        raise ValueError('Password must contain between 12 and 256 characters')
+    if not 8 <= len(password) <= 256:
+        raise ValueError('Password must contain between 8 and 256 characters')
     salt = secrets.token_bytes(16)
     digest = hashlib.scrypt(password.encode('utf-8'), salt=salt, n=_N, r=_R, p=_P, dklen=32)
     return 'scrypt$%s$%s' % (base64.b64encode(salt).decode('ascii'), base64.b64encode(digest).decode('ascii'))
