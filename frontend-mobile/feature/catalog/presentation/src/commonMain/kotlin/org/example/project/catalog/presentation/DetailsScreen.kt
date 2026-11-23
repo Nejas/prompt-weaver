@@ -29,21 +29,29 @@ fun DetailsScreen(component: DetailsComponent) {
             is DetailsState.Loaded -> {
                 Text(current.template.summary.title, style = CompliTheme.typography.headlineSmall)
                 Text(current.template.summary.description)
+                Text(current.template.body)
                 current.template.parameters.forEach { parameter ->
                     val value = current.values[parameter.name].orEmpty()
-                    val error = current.errors.any { it.parameterName == parameter.name }
+                    val error = current.errors.firstOrNull { it.parameterName == parameter.name }
                     if (parameter.type == "choice") {
                         Text(parameter.label, style = CompliTheme.typography.titleMedium)
                         parameter.options.forEach { option ->
                             CompliSelectionRow(selected = value == option, onClick = { component.setValue(parameter.name, if (!parameter.required && value == option) "" else option) }, headline = { Text(option) })
                         }
-                        if (error) Text("Выберите вариант", color = CompliTheme.colors.rejected)
+                        if (error != null) Text(if (error is ParameterValidationError.TooLong) "Максимум символов: ${error.maxLength}" else "Выберите вариант", color = CompliTheme.colors.rejected)
                     } else {
-                        CompliTextField(value = value, onValueChange = { component.setValue(parameter.name, it) }, label = parameter.label, errorText = if (error) "Заполните поле" else null, modifier = Modifier.fillMaxWidth())
+                        val errorText = when (error) {
+                            is ParameterValidationError.Required -> "Заполните поле"
+                            is ParameterValidationError.TooLong -> "Максимум символов: ${error.maxLength}"
+                            is ParameterValidationError.InvalidChoice -> "Выберите вариант"
+                            null -> null
+                        }
+                        CompliTextField(value = value, onValueChange = { component.setValue(parameter.name, it) }, label = parameter.label, errorText = errorText, modifier = Modifier.fillMaxWidth())
                     }
                 }
-                CompliPrimaryButton(text = "Проверить", onClick = component::validate)
-                if (current.validated && current.errors.isEmpty()) Text("Предварительная проверка пройдена")
+                CompliPrimaryButton(text = if (current.composing) "Сборка…" else "Собрать промпт", onClick = component::compose, enabled = !current.composing)
+                if (current.composeError) Text("Не удалось собрать промпт. Попробуйте ещё раз.")
+                current.result?.let { Text("Готовый промпт", style = CompliTheme.typography.titleMedium); Text(it) }
             }
         }
     }

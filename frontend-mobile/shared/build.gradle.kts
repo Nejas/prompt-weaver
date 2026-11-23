@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
@@ -44,12 +45,15 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":core:network"))
             implementation(project(":core:ui"))
-            implementation(libs.koin.core)
+            api(libs.koin.core)
             implementation(libs.coroutines.core)
             api(libs.decompose)
             api(project(":feature:catalog:presentation"))
             implementation(project(":feature:catalog:data"))
             implementation(project(":feature:catalog:domain"))
+            api(project(":feature:auth:presentation"))
+            implementation(project(":feature:auth:data"))
+            implementation(project(":feature:auth:domain"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

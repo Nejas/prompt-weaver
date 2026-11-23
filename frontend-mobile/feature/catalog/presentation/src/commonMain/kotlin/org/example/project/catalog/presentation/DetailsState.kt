@@ -11,5 +11,8 @@ sealed interface DetailsState {
         val values: Map<String, String> = emptyMap(),
         val errors: List<ParameterValidationError> = emptyList(),
         val validated: Boolean = false,
+        val composing: Boolean = false,
+        val result: String? = null,
+        val composeError: Boolean = false,
     ) : DetailsState
 }

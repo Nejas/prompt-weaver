@@ -6,11 +6,16 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.Serializable
 import org.example.project.catalog.domain.CatalogRepository
 
-class CatalogRoot(context: ComponentContext, repository: CatalogRepository, dispatcher: CoroutineDispatcher) : ComponentContext by context {
+class CatalogRoot(
+    context: ComponentContext,
+    repository: CatalogRepository,
+    dispatcher: CoroutineDispatcher,
+    onRegister: () -> Unit = {},
+) : ComponentContext by context {
     private val navigation = StackNavigation<Config>()
     val stack = childStack(source = navigation, serializer = Config.serializer(), initialConfiguration = Config.List, handleBackButton = true) { config, child ->
         when (config) {
-            Config.List -> Child.List(CatalogComponent(child, repository, { navigation.pushNew(Config.Details(it)) }, dispatcher))
+            Config.List -> Child.List(CatalogComponent(child, repository, { navigation.pushNew(Config.Details(it)) }, onRegister, dispatcher))
             is Config.Details -> Child.Details(DetailsComponent(child, config.id, repository, dispatcher) { navigation.pop() })
         }
     }

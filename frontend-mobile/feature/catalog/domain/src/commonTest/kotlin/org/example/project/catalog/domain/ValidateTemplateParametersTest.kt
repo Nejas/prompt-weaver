@@ -16,4 +16,11 @@ class ValidateTemplateParametersTest {
         assertEquals(listOf(ParameterValidationError.InvalidChoice("topic")), validateTemplateParameters(listOf(parameter), mapOf("topic" to " A ")))
         assertTrue(validateTemplateParameters(listOf(parameter), mapOf("topic" to "A")).isEmpty())
     }
+
+    @Test fun lengthLimitIsChecked() {
+        val text = parameter.copy(type = "text", maxLength = 3)
+        assertTrue(validateTemplateParameters(listOf(text), mapOf("topic" to "abc")).isEmpty())
+        assertEquals(listOf(ParameterValidationError.TooLong("topic", 3)), validateTemplateParameters(listOf(text), mapOf("topic" to "abcd")))
+        assertTrue(validateTemplateParameters(listOf(text.copy(maxLength = 1)), mapOf("topic" to "😀")).isEmpty())
+    }
 }

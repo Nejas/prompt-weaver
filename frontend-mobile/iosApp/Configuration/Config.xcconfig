@@ -1,4 +1,5 @@
 TEAM_ID=
+GATEWAY_BASE_URL=http:/$()/localhost:8000/
 
 PRODUCT_NAME=KotlinProject
 PRODUCT_BUNDLE_IDENTIFIER=org.example.project.KotlinProject$(TEAM_ID)

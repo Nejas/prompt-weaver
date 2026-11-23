@@ -1,0 +1,495 @@
+openapi: 3.1.0
+info:
+  title: Prompt Weaver Gateway API
+  version: 1.0.0
+  description: |
+    Public HTTP API of the Prompt Weaver Gateway. This file is intended for
+    mobile API clients and API-code generators.
+servers:
+  - url: /
+tags:
+  - name: Authentication
+  - name: Templates
+  - name: Prompts
+  - name: Rule sets
+paths:
+  /api/v1/auth/register:
+    post:
+      tags: [Authentication]
+      operationId: register
+      summary: Register a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Registration'
+      responses:
+        '201':
+          description: Registered user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/auth/login:
+    post:
+      tags: [Authentication]
+      operationId: login
+      summary: Sign in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '200':
+          description: Access and refresh tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/auth/refresh:
+    post:
+      tags: [Authentication]
+      operationId: refreshSession
+      summary: Refresh an access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshToken'
+      responses:
+        '200':
+          description: Refreshed token pair
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/auth/logout:
+    post:
+      tags: [Authentication]
+      operationId: logout
+      summary: Revoke a refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshToken'
+      responses:
+        '204':
+          description: Session revoked
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/me:
+    get:
+      tags: [Authentication]
+      operationId: getCurrentUser
+      summary: Get the current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/templates:
+    get:
+      tags: [Templates]
+      operationId: listTemplates
+      summary: List published templates
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of templates to return.
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of templates to skip.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Template page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/v1/templates/{version_id}:
+    get:
+      tags: [Templates]
+      operationId: getTemplate
+      summary: Get a template version
+      parameters:
+        - $ref: '#/components/parameters/VersionId'
+      responses:
+        '200':
+          description: Template details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/rule-sets/{rule_set_id}:
+    get:
+      tags: [Rule sets]
+      operationId: getRuleSet
+      summary: Get a published rule set
+      parameters:
+        - name: rule_set_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rule set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleSet'
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/prompts/compose:
+    post:
+      tags: [Prompts]
+      operationId: composePrompt
+      summary: Compose a prompt from a template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComposeRequest'
+      responses:
+        '200':
+          description: Composed prompt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComposeResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/prompts/compose-scenario:
+    post:
+      tags: [Prompts]
+      operationId: composeScenarioPrompt
+      summary: Compose a prompt using the template's configured rule set
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComposeRequest'
+      responses:
+        '200':
+          description: Composed prompt and applied rule set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComposeWithRulesResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v1/prompts/compose-with-rules:
+    post:
+      tags: [Prompts]
+      operationId: composePromptWithRules
+      summary: Compose a prompt using an explicit rule set
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComposeWithRulesRequest'
+      responses:
+        '200':
+          description: Composed prompt and applied rule set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComposeWithRulesResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/prompts/generate:
+    post:
+      tags: [Prompts]
+      operationId: generatePromptResponse
+      summary: Generate a model response for a composed prompt
+      description: The server selects the configured model. Clients cannot select a provider or model.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRequest'
+      responses:
+        '200':
+          description: Generated response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    VersionId:
+      name: version_id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+  responses:
+    BadRequest:
+      description: Invalid request or invalid template parameters
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing, expired, or invalid bearer token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Requested resource was not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Generation rate limit exceeded
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unavailable:
+      description: A dependent service is unavailable
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Credentials:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 3
+          maxLength: 254
+        password:
+          type: string
+          minLength: 8
+          maxLength: 256
+          writeOnly: true
+    Registration:
+      allOf:
+        - $ref: '#/components/schemas/Credentials'
+        - type: object
+          required: [first_name, last_name]
+          properties:
+            first_name:
+              type: string
+              minLength: 1
+              maxLength: 100
+            last_name:
+              type: string
+              minLength: 1
+              maxLength: 100
+    RefreshToken:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+          maxLength: 256
+    TokenPair:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in]
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        token_type:
+          type: string
+          example: bearer
+        expires_in: { type: integer }
+    RegistrationResult:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - $ref: '#/components/schemas/TokenPair'
+    User:
+      type: object
+      required: [id, email, first_name, last_name, roles]
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        first_name: { type: string }
+        last_name: { type: string }
+        roles:
+          type: array
+          items: { type: string }
+    ComposeRequest:
+      type: object
+      required: [template_version_id, parameters]
+      properties:
+        template_version_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        parameters:
+          type: object
+          additionalProperties: { type: string }
+    ComposeWithRulesRequest:
+      allOf:
+        - $ref: '#/components/schemas/ComposeRequest'
+        - type: object
+          required: [rule_set_id]
+          properties:
+            rule_set_id:
+              type: string
+              minLength: 1
+              maxLength: 128
+    GenerateRequest:
+      allOf:
+        - $ref: '#/components/schemas/ComposeRequest'
+        - type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+              minLength: 1
+              maxLength: 12000
+            rule_set_id:
+              anyOf:
+                - type: string
+                  minLength: 1
+                  maxLength: 128
+                - type: 'null'
+    ComposeResult:
+      type: object
+      required: [template_version_id, prompt]
+      properties:
+        template_version_id: { type: string }
+        prompt: { type: string }
+    ComposeWithRulesResult:
+      type: object
+      required: [template_version_id, rule_set_id, prompt]
+      properties:
+        template_version_id: { type: string }
+        rule_set_id: { type: string }
+        prompt: { type: string }
+    GenerationResult:
+      type: object
+      required: [template_version_id, rule_set_id, model, response, usage]
+      properties:
+        template_version_id: { type: string }
+        rule_set_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+        model: { type: string }
+        response: { type: string }
+        usage:
+          type: object
+          additionalProperties:
+            type: integer
+    TemplateSummary:
+      type: object
+      required: [id, title, description, category, slug]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        category: { type: string }
+        slug: { type: string }
+    TemplateList:
+      type: object
+      required: [templates, limit, offset]
+      properties:
+        templates:
+          type: array
+          items: { $ref: '#/components/schemas/TemplateSummary' }
+        limit: { type: integer }
+        offset: { type: integer }
+    TemplateParameter:
+      type: object
+      required: [name, label, type, required, max_length, options]
+      properties:
+        name: { type: string }
+        label: { type: string }
+        type: { type: string }
+        required: { type: boolean }
+        max_length:
+          anyOf:
+            - type: integer
+            - type: 'null'
+        options:
+          type: array
+          items: { type: string }
+    Template:
+      allOf:
+        - $ref: '#/components/schemas/TemplateSummary'
+        - type: object
+          required: [body, parameters]
+          properties:
+            body: { type: string }
+            parameters:
+              type: array
+              items: { $ref: '#/components/schemas/TemplateParameter' }
+    Rule:
+      type: object
+      required: [id, text, order]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        order: { type: integer }
+    RuleSet:
+      type: object
+      required: [id, name, rules]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        rules:
+          type: array
+          items: { $ref: '#/components/schemas/Rule' }
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          oneOf:
+            - type: string
+            - type: array

@@ -1,6 +1,7 @@
 package org.example.project.catalog.data
 
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -56,6 +57,8 @@ class HttpCatalogRepository(private val client: HttpClient, private val ioDispat
 
     private suspend fun <T> request(block: suspend () -> T): T = try {
         withContext(ioDispatcher) { block() }
+    } catch (e: HttpRequestTimeoutException) {
+        throw CatalogException.Unavailable(e)
     } catch (e: IOException) {
         throw CatalogException.Unavailable(e)
     } catch (e: SerializationException) {

@@ -1,4 +1,14 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.isFile) {
+        localPropertiesFile.inputStream().use(::load)
+    }
+}
+val gatewayBaseUrl = localProperties.getProperty("gatewayBaseUrl", "http://10.0.2.2:8000/")
+val gatewayBaseUrlLiteral = "\"${gatewayBaseUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -29,6 +39,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "GATEWAY_BASE_URL", "\"http://10.0.2.2:8000/\"")
     }
     packaging {
         resources {
@@ -36,6 +47,9 @@ android {
         }
     }
     buildTypes {
+        debug {
+            buildConfigField("String", "GATEWAY_BASE_URL", gatewayBaseUrlLiteral)
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -49,6 +63,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }

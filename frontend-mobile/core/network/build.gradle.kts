@@ -22,7 +22,10 @@ kotlin {
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.json)
         }
-        androidMain.dependencies { implementation(libs.ktor.client.android) }
+        androidMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.okhttp.android)
+        }
         iosMain.dependencies { implementation(libs.ktor.client.darwin) }
     }
 }

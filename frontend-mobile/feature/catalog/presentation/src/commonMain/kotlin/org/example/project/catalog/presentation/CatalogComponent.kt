@@ -19,6 +19,7 @@ class CatalogComponent(
     componentContext: ComponentContext,
     private val repository: CatalogRepository,
     private val onSelected: (String) -> Unit,
+    private val onRegister: () -> Unit,
     mainDispatcher: CoroutineDispatcher,
 ) : ComponentContext by componentContext {
     private val scope = CoroutineScope(SupervisorJob() + mainDispatcher)
@@ -47,4 +48,5 @@ class CatalogComponent(
     }
 
     fun select(versionId: String) { onSelected(versionId) }
+    fun register() = onRegister()
 }

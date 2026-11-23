@@ -19,6 +19,7 @@ fun CatalogScreen(component: CatalogComponent) {
     val state by component.state.collectAsState()
     Column(Modifier.fillMaxSize().safeContentPadding().padding(CompliTheme.spacing.large)) {
         Text("Каталог шаблонов", style = MaterialTheme.typography.headlineSmall)
+        CompliPrimaryButton(text = "Зарегистрироваться", onClick = component::register)
         Spacer(Modifier.height(CompliTheme.spacing.large))
         when (val current = state) {
             CatalogState.Loading -> CompliContentState(CompliContentStateType.Loading)
