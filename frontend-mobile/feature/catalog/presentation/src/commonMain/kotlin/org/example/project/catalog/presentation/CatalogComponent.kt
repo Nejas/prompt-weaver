@@ -20,6 +20,9 @@ class CatalogComponent(
     private val repository: CatalogRepository,
     private val onSelected: (String) -> Unit,
     mainDispatcher: CoroutineDispatcher,
+    private val onRegister: () -> Unit = {},
+    private val onLogin: () -> Unit = {},
+    private val onAccount: (() -> Unit)? = null,
 ) : ComponentContext by componentContext {
     private val scope = CoroutineScope(SupervisorJob() + mainDispatcher)
     private val mutableState = MutableStateFlow<CatalogState>(CatalogState.Loading)
@@ -47,4 +50,8 @@ class CatalogComponent(
     }
 
     fun select(versionId: String) { onSelected(versionId) }
+    fun register() = onRegister()
+    fun login() = onLogin()
+    val hasAccount get() = onAccount != null
+    fun account() = onAccount?.invoke()
 }

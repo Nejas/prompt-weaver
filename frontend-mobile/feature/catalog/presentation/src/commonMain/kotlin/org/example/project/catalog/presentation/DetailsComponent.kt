@@ -17,8 +17,10 @@ class DetailsComponent(
     private val mutableState = MutableStateFlow<DetailsState>(DetailsState.Loading)
     val state: StateFlow<DetailsState> = mutableState.asStateFlow()
     private var job: Job? = null
+    private var composeJob: Job? = null
     init { lifecycle.doOnDestroy { scope.cancel() }; reload() }
     fun reload() {
+        composeJob?.cancel()
         job?.cancel()
         mutableState.value = DetailsState.Loading
         job = scope.launch {
@@ -29,10 +31,30 @@ class DetailsComponent(
     }
     fun setValue(name: String, value: String) {
         val current = mutableState.value as? DetailsState.Loaded ?: return
-        mutableState.value = current.copy(values = current.values + (name to value), errors = current.errors.filterNot { it.parameterName == name }, validated = false)
+        composeJob?.cancel()
+        mutableState.value = current.copy(values = current.values + (name to value), errors = current.errors.filterNot { it.parameterName == name }, validated = false, composing = false, result = null, composeError = false)
     }
     fun validate() {
         val current = mutableState.value as? DetailsState.Loaded ?: return
         mutableState.value = current.copy(errors = validateTemplateParameters(current.template.parameters, current.values), validated = true)
+    }
+    fun compose() {
+        val current = mutableState.value as? DetailsState.Loaded ?: return
+        if (current.composing) return
+        val errors = validateTemplateParameters(current.template.parameters, current.values)
+        mutableState.value = current.copy(errors = errors, validated = true, result = null, composeError = false)
+        if (errors.isNotEmpty()) return
+        mutableState.value = (mutableState.value as DetailsState.Loaded).copy(composing = true)
+        composeJob = scope.launch {
+            try {
+                val result = repository.composePrompt(versionId, current.values)
+                val loaded = mutableState.value as? DetailsState.Loaded ?: return@launch
+                mutableState.value = loaded.copy(composing = false, result = result.text)
+            } catch (e: CancellationException) { throw e }
+            catch (e: CatalogException) {
+                val loaded = mutableState.value as? DetailsState.Loaded ?: return@launch
+                mutableState.value = loaded.copy(composing = false, composeError = true)
+            }
+        }
     }
 }

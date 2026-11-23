@@ -19,6 +19,18 @@ Use the run configurations provided by the run widget in your IDE's toolbar. You
 - Android app: `./gradlew :androidApp:assembleDebug`
 - iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
 
+### Connecting an Android device to the local backend
+
+For the Android emulator, the default Gateway address is `http://10.0.2.2:8000/`. For a physical device, create or update the ignored `local.properties` file in this folder:
+
+```properties
+gatewayBaseUrl=http://<computer-lan-ip>:8000/
+```
+
+The phone and computer must be on the same Wi-Fi network. In `backend/.env`, set `GATEWAY_BIND_ADDRESS` to the same computer IP before starting Docker Compose; this exposes Gateway only on that interface. The debug Android build permits local HTTP traffic; do not use this configuration for a production backend.
+
+For iOS, set `GATEWAY_BASE_URL` in the Xcode build settings or `iosApp/Configuration/Config.xcconfig`. The default localhost address is suitable for the simulator; on a physical device use the computer's reachable LAN address. The debug configuration permits local HTTP networking; production should use HTTPS.
+
 ### Running tests
 
 Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:

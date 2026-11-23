@@ -4,8 +4,10 @@ import android.app.Application
 import org.example.project.di.initializeDependencies
 
 class PromptApplication : Application() {
+    lateinit var dependencies: org.koin.core.Koin
+        private set
     override fun onCreate() {
         super.onCreate()
-        initializeDependencies("http://10.0.2.2:8000/")
+        dependencies = initializeDependencies(BuildConfig.GATEWAY_BASE_URL, AndroidTokenStore(this))
     }
 }

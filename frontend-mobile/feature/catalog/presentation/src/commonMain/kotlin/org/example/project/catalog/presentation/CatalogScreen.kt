@@ -19,6 +19,12 @@ fun CatalogScreen(component: CatalogComponent) {
     val state by component.state.collectAsState()
     Column(Modifier.fillMaxSize().safeContentPadding().padding(CompliTheme.spacing.large)) {
         Text("Каталог шаблонов", style = MaterialTheme.typography.headlineSmall)
+        if (component.hasAccount) {
+            org.example.project.ui.components.actions.CompliTextButton(text = "Аккаунт", onClick = component::account)
+        } else {
+            CompliPrimaryButton(text = "Зарегистрироваться", onClick = component::register)
+            org.example.project.ui.components.actions.CompliTextButton(text = "Войти", onClick = component::login)
+        }
         Spacer(Modifier.height(CompliTheme.spacing.large))
         when (val current = state) {
             CatalogState.Loading -> CompliContentState(CompliContentStateType.Loading)
