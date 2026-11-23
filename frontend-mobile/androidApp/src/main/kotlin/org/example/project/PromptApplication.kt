@@ -8,6 +8,6 @@ class PromptApplication : Application() {
         private set
     override fun onCreate() {
         super.onCreate()
-        dependencies = initializeDependencies(BuildConfig.GATEWAY_BASE_URL)
+        dependencies = initializeDependencies(BuildConfig.GATEWAY_BASE_URL, AndroidTokenStore(this))
     }
 }

@@ -22,12 +22,13 @@ import org.example.project.auth.domain.SessionTokens
 import org.example.project.auth.domain.TokenStore
 import org.example.project.auth.domain.RegisteredUser
 import org.example.project.auth.domain.Registration
+import org.example.project.auth.domain.AuthRepository
 
 /** Serializes session changes so rotating refresh tokens cannot be used concurrently. */
-class SessionClient(private val client: HttpClient, private val store: TokenStore) {
+class SessionClient(private val client: HttpClient, private val store: TokenStore) : AuthRepository {
     private val mutex = Mutex()
 
-    suspend fun register(registration: Registration): RegisteredUser = mutex.withLock {
+    override suspend fun register(registration: Registration): RegisteredUser = mutex.withLock {
         try {
             val response = client.post("api/v1/auth/register") {
                 contentType(ContentType.Application.Json)

@@ -53,7 +53,7 @@ kotlin {
             implementation(project(":feature:catalog:domain"))
             api(project(":feature:auth:presentation"))
             implementation(project(":feature:auth:data"))
-            implementation(project(":feature:auth:domain"))
+            api(project(":feature:auth:domain"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

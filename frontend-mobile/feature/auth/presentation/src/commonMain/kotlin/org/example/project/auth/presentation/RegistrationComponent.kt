@@ -53,6 +53,8 @@ class RegistrationComponent(
                 update { copy(isSubmitting = false, errorMessage = "Проверьте введённые данные") }
             } catch (error: AuthException.EmailAlreadyRegistered) {
                 update { copy(isSubmitting = false, errorMessage = "Этот email уже зарегистрирован") }
+            } catch (error: AuthException.RegistrationSessionNotSaved) {
+                update { copy(isSubmitting = false, errorMessage = "Аккаунт создан, но сессию сохранить не удалось. Войдите в аккаунт позже.") }
             } catch (error: AuthException.Unavailable) {
                 update { copy(isSubmitting = false, errorMessage = "Сервер недоступен. Попробуйте позже") }
             } catch (error: AuthException) {
