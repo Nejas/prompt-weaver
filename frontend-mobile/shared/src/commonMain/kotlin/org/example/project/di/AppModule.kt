@@ -9,25 +9,21 @@ import org.koin.core.parameter.parametersOf
 import com.arkivanov.decompose.ComponentContext
 import org.example.project.catalog.data.HttpCatalogRepository
 import org.example.project.catalog.domain.CatalogRepository
-import org.example.project.auth.data.HttpAuthRepository
 import org.example.project.auth.domain.AuthRepository
 import org.example.project.auth.domain.TokenStore
 import org.example.project.auth.data.SessionClient
 import org.example.project.AppRoot
 
-fun appModule(gatewayBaseUrl: String, tokenStore: TokenStore? = null) = module {
+fun appModule(gatewayBaseUrl: String, tokenStore: TokenStore) = module {
     single<DispatcherProvider> { DefaultDispatcherProvider() }
     single { GatewayConfig(gatewayBaseUrl) }
     single { createHttpClient(get()) }
     single<CatalogRepository> { HttpCatalogRepository(get(), get<DispatcherProvider>().io) }
-    single<AuthRepository> {
-        if (tokenStore != null) SessionClient(get(), tokenStore)
-        else HttpAuthRepository(get(), get<DispatcherProvider>().io)
-    }
+    single<AuthRepository> { SessionClient(get(), tokenStore) }
     factory { (context: ComponentContext) -> AppRoot(context, get(), get(), get<DispatcherProvider>().main) }
 }
 
-fun initializeDependencies(gatewayBaseUrl: String, tokenStore: TokenStore? = null): Koin =
+fun initializeDependencies(gatewayBaseUrl: String, tokenStore: TokenStore): Koin =
     startKoin { modules(appModule(gatewayBaseUrl, tokenStore)) }.koin
 
 fun createAppComponent(koin: Koin, context: ComponentContext): AppRoot =
