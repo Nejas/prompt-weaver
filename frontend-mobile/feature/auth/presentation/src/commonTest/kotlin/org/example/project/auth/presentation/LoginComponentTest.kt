@@ -17,9 +17,9 @@ class LoginComponentTest {
         var navigated = false
         val component = LoginComponent(DefaultComponentContext(LifecycleRegistry()), sessions,
             StandardTestDispatcher(testScheduler), { navigated = true }, {})
-        component.updateEmail("user@example.com")
-        component.updatePassword("secret")
-        component.submit()
+        component.onIntent(LoginIntent.UpdateEmail("user@example.com"))
+        component.onIntent(LoginIntent.UpdatePassword("secret"))
+        component.onIntent(LoginIntent.Submit)
         testScheduler.runCurrent()
         assertEquals(1, sessions.calls)
         assertEquals("", component.state.value.password)
@@ -30,13 +30,29 @@ class LoginComponentTest {
         val sessions = FakeSessions().apply { fail = true }
         val component = LoginComponent(DefaultComponentContext(LifecycleRegistry()), sessions,
             StandardTestDispatcher(testScheduler), {}, {})
-        component.updateEmail("user@example.com")
-        component.updatePassword("wrong")
-        component.submit()
+        component.onIntent(LoginIntent.UpdateEmail("user@example.com"))
+        component.onIntent(LoginIntent.UpdatePassword("wrong"))
+        component.onIntent(LoginIntent.Submit)
         testScheduler.runCurrent()
-        assertEquals("Неверный email или пароль", component.state.value.error)
+        assertEquals(AuthUiMessage.InvalidCredentials, component.state.value.error)
         assertEquals("", component.state.value.password)
         assertFalse(component.state.value.submitting)
+    }
+
+    @Test fun registerIntentNavigatesToRegistration() {
+        var registerOpened = false
+        val component = LoginComponent(
+            DefaultComponentContext(LifecycleRegistry()),
+            FakeSessions(),
+            StandardTestDispatcher(),
+            onLoggedIn = {},
+            back = {},
+            onRegister = { registerOpened = true },
+        )
+
+        component.onIntent(LoginIntent.Register)
+
+        assertEquals(true, registerOpened)
     }
 }
 

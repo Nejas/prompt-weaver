@@ -13,11 +13,11 @@ class DetailsComponentTest {
         val component = DetailsComponent(DefaultComponentContext(LifecycleRegistry()), "v1", repo, StandardTestDispatcher(testScheduler)) {}
         testScheduler.runCurrent()
         repo.fail = true
-        component.compose()
+        component.onIntent(DetailsIntent.Compose)
         testScheduler.runCurrent()
         assertTrue((component.state.value as DetailsState.Loaded).composeError)
         repo.fail = false
-        component.compose()
+        component.onIntent(DetailsIntent.Compose)
         testScheduler.runCurrent()
         assertEquals("", (component.state.value as DetailsState.Loaded).result)
     }
@@ -26,14 +26,14 @@ class DetailsComponentTest {
         val repo = DetailsFake(template)
         val component = DetailsComponent(DefaultComponentContext(LifecycleRegistry()), "v1", repo, StandardTestDispatcher(testScheduler)) {}
         testScheduler.runCurrent()
-        component.compose()
+        component.onIntent(DetailsIntent.Compose)
         assertEquals(listOf(ParameterValidationError.Required("x")), (component.state.value as DetailsState.Loaded).errors)
-        component.setValue("x", "hello")
-        component.compose()
+        component.onIntent(DetailsIntent.SetValue("x", "hello"))
+        component.onIntent(DetailsIntent.Compose)
         assertTrue((component.state.value as DetailsState.Loaded).composing)
         testScheduler.runCurrent()
         assertEquals("hello", (component.state.value as DetailsState.Loaded).result)
-        component.setValue("x", "changed")
+        component.onIntent(DetailsIntent.SetValue("x", "changed"))
         assertNull((component.state.value as DetailsState.Loaded).result)
     }
     @Test fun loadValidateAndBack() = runTest {
@@ -43,21 +43,21 @@ class DetailsComponentTest {
         val component = DetailsComponent(DefaultComponentContext(LifecycleRegistry()), "v1", repo, StandardTestDispatcher(testScheduler)) { backed = true }
         assertEquals(DetailsState.Loading, component.state.value)
         testScheduler.runCurrent()
-        component.validate()
+        component.onIntent(DetailsIntent.Validate)
         assertEquals(listOf(ParameterValidationError.Required("x")), (component.state.value as DetailsState.Loaded).errors)
-        component.setValue("x", "hello")
-        component.validate()
+        component.onIntent(DetailsIntent.SetValue("x", "hello"))
+        component.onIntent(DetailsIntent.Validate)
         assertTrue((component.state.value as DetailsState.Loaded).errors.isEmpty())
-        component.back()
+        component.onIntent(DetailsIntent.Back)
         assertTrue(backed)
     }
     @Test fun navigationOpensDetailsAndReturnsToList() = runTest {
         val repo = DetailsFake(TemplateDetails(TemplateSummary("v1", "", "", "", ""), "", emptyList()))
         val root = CatalogRoot(DefaultComponentContext(LifecycleRegistry()), repo, StandardTestDispatcher(testScheduler))
         val catalog = (root.stack.value.active.instance as CatalogRoot.Child.List).component
-        catalog.select("v1")
+        catalog.onIntent(CatalogIntent.SelectTemplate("v1"))
         val details = assertIs<CatalogRoot.Child.Details>(root.stack.value.active.instance)
-        details.component.back()
+        details.component.onIntent(DetailsIntent.Back)
         assertIs<CatalogRoot.Child.List>(root.stack.value.active.instance)
     }
     @Test fun errorAndRetry() = runTest {
@@ -67,7 +67,7 @@ class DetailsComponentTest {
         testScheduler.runCurrent()
         assertEquals(DetailsState.Error, component.state.value)
         repo.fail = false
-        component.reload()
+        component.onIntent(DetailsIntent.Reload)
         testScheduler.runCurrent()
         assertIs<DetailsState.Loaded>(component.state.value)
     }

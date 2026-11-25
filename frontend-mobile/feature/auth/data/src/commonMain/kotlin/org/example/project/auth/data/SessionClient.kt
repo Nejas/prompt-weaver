@@ -13,6 +13,7 @@ import io.ktor.serialization.ContentConvertException
 import io.ktor.utils.io.errors.IOException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -26,10 +27,15 @@ import org.example.project.auth.domain.AuthRepository
 import org.example.project.auth.domain.SessionRepository
 
 /** Serializes session changes so rotating refresh tokens cannot be used concurrently. */
-class SessionClient(private val client: HttpClient, private val store: TokenStore) : AuthRepository, SessionRepository {
+class SessionClient(
+    private val client: HttpClient,
+    private val store: TokenStore,
+    private val ioDispatcher: CoroutineDispatcher,
+) : AuthRepository, SessionRepository {
     private val mutex = Mutex()
 
-    override suspend fun register(registration: Registration): RegisteredUser = mutex.withLock {
+    override suspend fun register(registration: Registration): RegisteredUser = withContext(ioDispatcher) {
+        mutex.withLock {
         try {
             val response = client.post("api/v1/auth/register") {
                 contentType(ContentType.Application.Json)
@@ -64,47 +70,54 @@ class SessionClient(private val client: HttpClient, private val store: TokenStor
         } catch (error: IllegalArgumentException) {
             throw AuthException.Unexpected(error)
         }
+        }
     }
 
-    override suspend fun login(email: String, password: String): SessionTokens = mutex.withLock {
-        val tokens = requestTokens("api/v1/auth/login", LoginRequest(email.trim(), password))
-        store.write(tokens)
-        tokens
-    }
-
-    override suspend fun refresh(): SessionTokens? = mutex.withLock {
-        val old = store.read() ?: return@withLock null
-        try {
-            val tokens = requestTokens("api/v1/auth/refresh", RefreshRequest(old.refreshToken))
+    override suspend fun login(email: String, password: String): SessionTokens = withContext(ioDispatcher) {
+        mutex.withLock {
+            val tokens = requestTokens("api/v1/auth/login", LoginRequest(email.trim(), password))
             store.write(tokens)
             tokens
-        } catch (error: AuthException.Unauthorized) {
-            withContext(NonCancellable) { store.clear() }
-            throw error
+        }
+    }
+
+    override suspend fun refresh(): SessionTokens? = withContext(ioDispatcher) {
+        mutex.withLock {
+            val old = store.read() ?: return@withLock null
+            try {
+                val tokens = requestTokens("api/v1/auth/refresh", RefreshRequest(old.refreshToken))
+                store.write(tokens)
+                tokens
+            } catch (error: AuthException.Unauthorized) {
+                withContext(NonCancellable) { store.clear() }
+                throw error
+            }
         }
     }
 
     /** Returns false when local logout succeeded but server revocation could not be confirmed. */
-    override suspend fun logout(): Boolean = mutex.withLock {
-        try {
-            val old = store.read()
-            if (old == null) true else {
-                val response = client.post("api/v1/auth/logout") {
-                    contentType(ContentType.Application.Json)
-                    setBody(RefreshRequest(old.refreshToken))
+    override suspend fun logout(): Boolean = withContext(ioDispatcher) {
+        mutex.withLock {
+            try {
+                val old = store.read()
+                if (old == null) true else {
+                    val response = client.post("api/v1/auth/logout") {
+                        contentType(ContentType.Application.Json)
+                        setBody(RefreshRequest(old.refreshToken))
+                    }
+                    response.status.isSuccess()
                 }
-                response.status.isSuccess()
+            } catch (_: IOException) {
+                false
+            } catch (_: HttpRequestTimeoutException) {
+                false
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                false
+            } finally {
+                withContext(NonCancellable) { store.clear() }
             }
-        } catch (_: IOException) {
-            false
-        } catch (_: HttpRequestTimeoutException) {
-            false
-        } catch (error: CancellationException) {
-            throw error
-        } catch (_: Exception) {
-            false
-        } finally {
-            withContext(NonCancellable) { store.clear() }
         }
     }
 

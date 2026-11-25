@@ -1,0 +1,21 @@
+<resources>
+    <string name="chat_model_name">Gemini 3.6 Flash</string>
+    <string name="chat_topic">Английский каждый день</string>
+    <string name="chat_demo_user">Хочу подтянуть английский. Составь план на каждый день.</string>
+    <string name="chat_demo_intro">Вот простой план на каждый день. Главное — заниматься регулярно.</string>
+    <string name="chat_step_words_title">5 минут · Новые слова</string>
+    <string name="chat_step_words_body">Выучи 5 слов и составь с каждым короткое предложение.</string>
+    <string name="chat_step_practice_title">10 минут · Практика</string>
+    <string name="chat_step_practice_body">Послушай короткое видео и перескажи его своими словами.</string>
+    <string name="chat_step_talk_title">5 минут · Разговор</string>
+    <string name="chat_step_talk_body">Обсудим твой день на английском. Я помогу с ошибками.</string>
+    <string name="chat_placeholder">Спросите о чём угодно…</string>
+    <string name="chat_disclaimer">ИИ может ошибаться. Проверяйте важное.</string>
+    <string name="chat_history">История чатов</string>
+    <string name="chat_profile">Профиль</string>
+    <string name="chat_copy">Копировать ответ</string>
+    <string name="chat_retry">Повторить ответ</string>
+    <string name="chat_like">Хороший ответ</string>
+    <string name="chat_attach">Прикрепить файл</string>
+    <string name="chat_send">Отправить сообщение</string>
+</resources>

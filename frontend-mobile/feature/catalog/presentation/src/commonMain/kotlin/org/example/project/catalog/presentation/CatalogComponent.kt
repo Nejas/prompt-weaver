@@ -34,6 +34,16 @@ class CatalogComponent(
         reload()
     }
 
+    fun onIntent(intent: CatalogIntent) {
+        when (intent) {
+            CatalogIntent.Reload -> reload()
+            is CatalogIntent.SelectTemplate -> select(intent.versionId)
+            CatalogIntent.Register -> register()
+            CatalogIntent.Login -> login()
+            CatalogIntent.Account -> account()
+        }
+    }
+
     fun reload() {
         loadJob?.cancel()
         mutableState.value = CatalogState.Loading

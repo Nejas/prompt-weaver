@@ -6,5 +6,5 @@ data class RegistrationState(
     val email: String = "",
     val password: String = "",
     val isSubmitting: Boolean = false,
-    val errorMessage: String? = null,
+    val error: AuthUiMessage? = null,
 )

@@ -39,6 +39,10 @@ kotlin {
     }
     sourceSets {
         androidMain.dependencies {
+            implementation(project(":core:ui"))
+            implementation(project(":feature:chat:presentation"))
+            implementation(project(":feature:profile:presentation"))
+            implementation(project(":feature:auth:presentation"))
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
         }
@@ -52,6 +56,8 @@ kotlin {
             implementation(project(":feature:catalog:data"))
             implementation(project(":feature:catalog:domain"))
             api(project(":feature:auth:presentation"))
+            api(project(":feature:chat:presentation"))
+            api(project(":feature:profile:presentation"))
             implementation(project(":feature:auth:data"))
             api(project(":feature:auth:domain"))
             implementation(libs.compose.runtime)

@@ -32,6 +32,7 @@ data class CompliRadii(
     val card: Dp,
     val dialog: Dp,
     val sheet: Dp,
+    val fieldGroup: Dp,
 )
 
 @Immutable
@@ -63,6 +64,7 @@ internal val DefaultCompliRadii = CompliRadii(
     card = 20.dp,
     dialog = 24.dp,
     sheet = 28.dp,
+    fieldGroup = 18.dp,
 )
 
 internal val DefaultCompliElevations = CompliElevations(

@@ -12,6 +12,7 @@ kotlin {
         namespace = "org.example.project.core.network"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
+        withHostTest {}
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
         }
@@ -21,6 +22,9 @@ kotlin {
             api(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.json)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
