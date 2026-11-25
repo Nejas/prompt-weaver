@@ -10,3 +10,5 @@
 - Области: `backend` — серверная часть, `frontend-mobile` — мобильное приложение, `ci` — проверки и автоматизация, `project` — общие изменения проекта.
 - Типы: `feature`, `fix`, `docs`, `test`, `refactor` или `chore`. Примеры: `backend/feature/prompt-api`, `frontend-mobile/feature/catalog-screen`, `ci/fix/android-build`, `project/chore/update-readme`.
 - Для изменений, затрагивающих несколько областей, выбирать наиболее подходящую область или `project`. Существующие ветки не переименовывать автоматически. Формат сообщений коммитов остаётся прежним.
+
+

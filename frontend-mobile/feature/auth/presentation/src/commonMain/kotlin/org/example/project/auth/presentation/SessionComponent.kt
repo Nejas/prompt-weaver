@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.example.project.auth.domain.SessionRepository
 
-data class SessionState(val leaving: Boolean = false, val loggedOut: Boolean = false, val notice: String? = null)
+data class SessionState(val leaving: Boolean = false, val loggedOut: Boolean = false, val notice: AuthUiMessage? = null)
 
 class SessionComponent(
     context: ComponentContext,
@@ -24,7 +24,16 @@ class SessionComponent(
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(SessionState())
     val state = mutableState.asStateFlow()
+
     init { lifecycle.doOnDestroy { scope.cancel() } }
+
+    fun onIntent(intent: SessionIntent) {
+        when (intent) {
+            SessionIntent.Logout -> logout()
+            SessionIntent.ContinueAfterLogout -> continueAfterLogout()
+            SessionIntent.BrowseCatalog -> browseCatalog()
+        }
+    }
 
     fun logout() {
         if (state.value.leaving) return
@@ -33,10 +42,11 @@ class SessionComponent(
             try {
                 val revoked = sessions.logout()
                 if (revoked) onLoggedOut()
-                else mutableState.value = SessionState(loggedOut = true, notice = "Сессия удалена с устройства, но отзыв на сервере не подтверждён")
+                else mutableState.value = SessionState(loggedOut = true, notice = AuthUiMessage.LogoutNotConfirmed)
             } catch (error: CancellationException) { throw error }
-            catch (_: Exception) { mutableState.value = SessionState(notice = "Не удалось удалить сессию. Попробуйте ещё раз") }
+            catch (_: Exception) { mutableState.value = SessionState(notice = AuthUiMessage.LogoutFailed) }
         }
     }
+
     fun continueAfterLogout() { if (state.value.loggedOut) onLoggedOut() }
 }

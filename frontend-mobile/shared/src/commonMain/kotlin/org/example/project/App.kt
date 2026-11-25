@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun App(component: AppRoot) {
-    CompliTheme {
+    CompliTheme(darkTheme = true) {
         Surface(modifier = Modifier.fillMaxSize(), color = CompliTheme.colors.background) {
             AppRootScreen(component)
         }

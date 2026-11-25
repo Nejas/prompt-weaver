@@ -17,7 +17,7 @@ data class LoginState(
     val email: String = "",
     val password: String = "",
     val submitting: Boolean = false,
-    val error: String? = null,
+    val error: AuthUiMessage? = null,
 )
 
 class LoginComponent(
@@ -26,6 +26,7 @@ class LoginComponent(
     dispatcher: CoroutineDispatcher,
     private val onLoggedIn: () -> Unit,
     val back: () -> Unit,
+    private val onRegister: () -> Unit = {},
 ) : ComponentContext by context {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(LoginState())
@@ -33,14 +34,25 @@ class LoginComponent(
 
     init { lifecycle.doOnDestroy { scope.cancel() } }
 
+    fun onIntent(intent: LoginIntent) {
+        when (intent) {
+            is LoginIntent.UpdateEmail -> updateEmail(intent.value)
+            is LoginIntent.UpdatePassword -> updatePassword(intent.value)
+            LoginIntent.Submit -> submit()
+            LoginIntent.Back -> back()
+            LoginIntent.Register -> onRegister()
+        }
+    }
+
     fun updateEmail(value: String) { mutableState.value = mutableState.value.copy(email = value, error = null) }
     fun updatePassword(value: String) { mutableState.value = mutableState.value.copy(password = value, error = null) }
+    fun cancelRequests() { scope.cancel() }
 
     fun submit() {
         val current = state.value
         if (current.submitting) return
         if (current.email.isBlank() || current.password.isBlank()) {
-            mutableState.value = current.copy(error = "Введите email и пароль")
+            mutableState.value = current.copy(error = AuthUiMessage.EmptyCredentials)
             return
         }
         mutableState.value = current.copy(submitting = true, error = null)
@@ -50,13 +62,13 @@ class LoginComponent(
                 mutableState.value = mutableState.value.copy(password = "", submitting = false)
                 onLoggedIn()
             } catch (error: CancellationException) { throw error }
-            catch (_: AuthException.Unauthorized) { fail("Неверный email или пароль") }
-            catch (_: AuthException.Unavailable) { fail("Сервер недоступен. Попробуйте позже") }
-            catch (_: Exception) { fail("Не удалось войти. Попробуйте ещё раз") }
+            catch (_: AuthException.Unauthorized) { fail(AuthUiMessage.InvalidCredentials) }
+            catch (_: AuthException.Unavailable) { fail(AuthUiMessage.ServiceUnavailable) }
+            catch (_: Exception) { fail(AuthUiMessage.LoginFailed) }
         }
     }
 
-    private fun fail(message: String) {
+    private fun fail(message: AuthUiMessage) {
         mutableState.value = mutableState.value.copy(password = "", submitting = false, error = message)
     }
 }

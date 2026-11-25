@@ -18,7 +18,22 @@ class DetailsComponent(
     val state: StateFlow<DetailsState> = mutableState.asStateFlow()
     private var job: Job? = null
     private var composeJob: Job? = null
-    init { lifecycle.doOnDestroy { scope.cancel() }; reload() }
+
+    init {
+        lifecycle.doOnDestroy { scope.cancel() }
+        reload()
+    }
+
+    fun onIntent(intent: DetailsIntent) {
+        when (intent) {
+            DetailsIntent.Reload -> reload()
+            is DetailsIntent.SetValue -> setValue(intent.name, intent.value)
+            DetailsIntent.Validate -> validate()
+            DetailsIntent.Compose -> compose()
+            DetailsIntent.Back -> back()
+        }
+    }
+
     fun reload() {
         composeJob?.cancel()
         job?.cancel()
@@ -29,15 +44,18 @@ class DetailsComponent(
             catch (e: CatalogException) { mutableState.value = DetailsState.Error }
         }
     }
+
     fun setValue(name: String, value: String) {
         val current = mutableState.value as? DetailsState.Loaded ?: return
         composeJob?.cancel()
         mutableState.value = current.copy(values = current.values + (name to value), errors = current.errors.filterNot { it.parameterName == name }, validated = false, composing = false, result = null, composeError = false)
     }
+
     fun validate() {
         val current = mutableState.value as? DetailsState.Loaded ?: return
         mutableState.value = current.copy(errors = validateTemplateParameters(current.template.parameters, current.values), validated = true)
     }
+
     fun compose() {
         val current = mutableState.value as? DetailsState.Loaded ?: return
         if (current.composing) return

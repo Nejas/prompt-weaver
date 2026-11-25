@@ -220,6 +220,8 @@ fun CompliPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     loading: Boolean = false,
+    minHeight: Dp = CompliButtonDefaults.MinHeight,
+    shape: Shape = CompliButtonDefaults.shape(),
     leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
 ) = CompliButton(
@@ -228,6 +230,8 @@ fun CompliPrimaryButton(
     modifier = modifier,
     enabled = enabled,
     loading = loading,
+    minHeight = minHeight,
+    shape = shape,
     colors = CompliButtonDefaults.primaryColors(),
     leadingContent = leadingContent,
     trailingContent = trailingContent,

@@ -2,15 +2,18 @@ package org.example.project
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.arkivanov.decompose.value.subscribe
-import org.example.project.auth.presentation.RegistrationScreen
 import org.example.project.auth.presentation.LoginScreen
+import org.example.project.auth.presentation.RegistrationScreen
 import org.example.project.auth.presentation.SessionScreen
 import org.example.project.catalog.presentation.CatalogRootScreen
+import org.example.project.chat.presentation.ChatScreen
+import org.example.project.profile.presentation.ProfileScreen
 
 @Composable
 fun AppRootScreen(root: AppRoot) {
@@ -20,9 +23,19 @@ fun AppRootScreen(root: AppRoot) {
         onDispose { subscription.cancel() }
     }
     when (val child = stack.active.instance) {
+        AppRoot.Child.Loading -> AppLoadingScreen()
+        is AppRoot.Child.Auth -> AuthFlowScreen(child.component)
         is AppRoot.Child.Catalog -> CatalogRootScreen(child.component)
-        is AppRoot.Child.Registration -> RegistrationScreen(child.component)
-        is AppRoot.Child.Login -> LoginScreen(child.component)
+        is AppRoot.Child.Chat -> ChatScreen(child.component)
+        is AppRoot.Child.Profile -> ProfileScreen(child.component)
         is AppRoot.Child.Session -> SessionScreen(child.component)
+    }
+}
+
+@Composable
+private fun AuthFlowScreen(component: AuthFlowComponent) {
+    when (val state = component.state.collectAsState().value) {
+        is AuthFlowState.Login -> LoginScreen(state.component)
+        is AuthFlowState.Registration -> RegistrationScreen(state.component)
     }
 }

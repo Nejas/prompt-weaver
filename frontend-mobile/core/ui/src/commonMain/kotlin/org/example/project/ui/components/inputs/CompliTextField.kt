@@ -10,6 +10,8 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import org.example.project.ui.theme.CompliTheme
@@ -35,6 +37,7 @@ fun CompliTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    shape: Shape = RoundedCornerShape(CompliTheme.radii.medium),
 ) {
     val colors = CompliTheme.colors
     val supporting = errorText ?: supportingText
@@ -56,7 +59,7 @@ fun CompliTextField(
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         singleLine = singleLine,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(CompliTheme.radii.medium),
+        shape = shape,
         colors = TextFieldDefaults.colors(
             focusedTextColor = colors.onSurface,
             unfocusedTextColor = colors.onSurface,

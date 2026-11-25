@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
+compose.resources { packageOfResClass = "org.example.project.auth.presentation.generated.resources" }
+
 kotlin {
     iosArm64()
     iosSimulatorArm64()
@@ -14,6 +16,9 @@ kotlin {
         namespace = "org.example.project.auth.presentation"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
+        androidResources {
+            enable = true
+        }
         withHostTest {}
         compilerOptions { jvmTarget = JvmTarget.JVM_11 }
     }
@@ -31,6 +36,7 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
+            implementation(libs.compose.components.resources)
         }
     }
 }
