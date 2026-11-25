@@ -77,6 +77,7 @@ fun ProfileScreenContent(state: ProfileState, onIntent: (ProfileIntent) -> Unit)
             onClick = { onIntent(ProfileIntent.OpenCatalog) },
             modifier = Modifier.fillMaxWidth()
         )
+        CompliTextButton(text = "Настройки", onClick = { onIntent(ProfileIntent.OpenSettings) }, modifier = Modifier.fillMaxWidth())
 
         CompliTextButton(
             text = "Выйти из аккаунта",

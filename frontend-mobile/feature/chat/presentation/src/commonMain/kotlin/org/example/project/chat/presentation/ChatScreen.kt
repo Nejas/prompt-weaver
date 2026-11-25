@@ -49,6 +49,7 @@ fun ChatScreenContent(state: ChatState, onIntent: (ChatIntent) -> Unit) {
                     Text(stringResource(modelResource(state.model)), style = CompliTheme.typography.titleMedium)
                     Text("⌄", color = CompliTheme.colors.onSurfaceVariant)
                 }
+                CompliIconButton({ onIntent(ChatIntent.OpenSettings) }, stringResource(Res.string.chat_settings), colors = CompliButtonDefaults.textColors(), size = 40.dp) { Text("⚙", color = CompliTheme.colors.onSurfaceVariant) }
                 CompliIconButton({ onIntent(ChatIntent.OpenProfile) }, stringResource(Res.string.chat_profile), colors = CompliButtonDefaults.textColors(), size = 48.dp) { Text("♙", color = CompliTheme.colors.onSurfaceVariant) }
             }
             Conversation(state, Modifier.weight(1f))

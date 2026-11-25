@@ -8,6 +8,7 @@ class ChatComponent(
     context: ComponentContext,
     private val onProfile: () -> Unit = {},
     private val onCatalog: () -> Unit = {},
+    private val onSettings: () -> Unit = {},
 ) : ComponentContext by context {
     private val mutableState = MutableStateFlow(ChatState())
     val state = mutableState.asStateFlow()
@@ -18,6 +19,7 @@ class ChatComponent(
             ChatIntent.Send -> send()
             ChatIntent.OpenProfile -> onProfile()
             ChatIntent.OpenCatalog -> onCatalog()
+            ChatIntent.OpenSettings -> onSettings()
         }
     }
 

@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import org.example.project.auth.domain.AuthException
 import org.example.project.auth.domain.AuthRepository
@@ -22,6 +23,8 @@ import org.example.project.catalog.domain.CatalogRepository
 import org.example.project.catalog.presentation.CatalogRoot
 import org.example.project.chat.presentation.ChatComponent
 import org.example.project.profile.presentation.ProfileComponent
+import org.example.project.settings.presentation.SettingsComponent
+import org.example.project.settings.presentation.SettingsState
 
 class AppRoot(
     context: ComponentContext,
@@ -32,6 +35,8 @@ class AppRoot(
 ) : ComponentContext by context {
     private val navigation = StackNavigation<Config>()
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+    private val mutableSettings = kotlinx.coroutines.flow.MutableStateFlow(SettingsState())
+    val settings = mutableSettings.asStateFlow()
     val stack = childStack(
         source = navigation,
         serializer = Config.serializer(),
@@ -64,8 +69,10 @@ class AppRoot(
                     context = child,
                     onProfile = { navigation.pushNew(Config.Profile) },
                     onCatalog = { navigation.pushNew(Config.Catalog) },
+                    onSettings = { navigation.pushNew(Config.Settings) },
                 ),
             )
+            Config.Settings -> Child.Settings(SettingsComponent(child, mutableSettings, onBack = { navigation.pop() }))
             Config.Profile -> Child.Profile(
                 ProfileComponent(
                     context = child,
@@ -85,6 +92,7 @@ class AppRoot(
                             navigation.replaceAll(Config.Auth)
                         }
                     },
+                    onSettings = { navigation.pushNew(Config.Settings) },
                 ),
             )
             Config.Session -> Child.Session(
@@ -123,6 +131,7 @@ class AppRoot(
         @Serializable data object Chat : Config
         @Serializable data object Profile : Config
         @Serializable data object Session : Config
+        @Serializable data object Settings : Config
     }
 
     sealed interface Child {
@@ -132,5 +141,6 @@ class AppRoot(
         data class Chat(val component: ChatComponent) : Child
         data class Profile(val component: ProfileComponent) : Child
         data class Session(val component: SessionComponent) : Child
+        data class Settings(val component: SettingsComponent) : Child
     }
 }

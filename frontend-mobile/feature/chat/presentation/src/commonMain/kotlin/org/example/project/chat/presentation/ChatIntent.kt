@@ -5,4 +5,5 @@ sealed interface ChatIntent {
     data object Send : ChatIntent
     data object OpenProfile : ChatIntent
     data object OpenCatalog : ChatIntent
+    data object OpenSettings : ChatIntent
 }

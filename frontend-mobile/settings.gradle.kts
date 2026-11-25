@@ -34,3 +34,4 @@ include(":feature:catalog:domain", ":feature:catalog:data", ":feature:catalog:pr
 include(":feature:auth:domain", ":feature:auth:data", ":feature:auth:presentation")
 include(":feature:chat:presentation")
 include(":feature:profile:presentation")
+include(":feature:settings:presentation")

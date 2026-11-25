@@ -30,6 +30,7 @@ sealed interface ProfileIntent {
     data object Back : ProfileIntent
     data object OpenCatalog : ProfileIntent
     data object Logout : ProfileIntent
+    data object OpenSettings : ProfileIntent
 }
 
 class ProfileComponent(
@@ -40,6 +41,7 @@ class ProfileComponent(
     private val onBack: () -> Unit = {},
     private val onCatalog: () -> Unit = {},
     private val onLogout: () -> Unit = {},
+    private val onSettings: () -> Unit = {},
 ) : ComponentContext by context {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(ProfileState())
@@ -79,6 +81,7 @@ class ProfileComponent(
             ProfileIntent.Back -> onBack()
             ProfileIntent.OpenCatalog -> onCatalog()
             ProfileIntent.Logout -> performLogout()
+            ProfileIntent.OpenSettings -> onSettings()
         }
     }
 
