@@ -15,6 +15,75 @@ import kotlin.test.assertTrue
 
 class ChatComponentTest {
     @Test
+    fun applyingPromptToEmptyDraftDoesNotSendMessage() {
+        val component = ChatComponent(DefaultComponentContext(LifecycleRegistry()))
+        val messages = component.state.value.messages
+
+        component.applyPrompt("A composed prompt")
+
+        assertEquals("A composed prompt", component.state.value.draft)
+        assertEquals(messages, component.state.value.messages)
+        assertEquals(null, component.state.value.pendingPrompt)
+    }
+
+    @Test
+    fun replacingExistingDraftRequiresConfirmationAndCanBeCancelled() {
+        val component = ChatComponent(DefaultComponentContext(LifecycleRegistry()))
+        component.onIntent(ChatIntent.ChangeDraft("Original"))
+        val messages = component.state.value.messages
+
+        component.applyPrompt("New prompt")
+        assertEquals("Original", component.state.value.draft)
+        assertEquals("New prompt", component.state.value.pendingPrompt)
+        component.onIntent(ChatIntent.CancelDraftReplacement)
+        assertEquals("Original", component.state.value.draft)
+        assertEquals(null, component.state.value.pendingPrompt)
+
+        component.applyPrompt("New prompt")
+        component.onIntent(ChatIntent.ConfirmDraftReplacement)
+        assertEquals("New prompt", component.state.value.draft)
+        assertEquals(null, component.state.value.pendingPrompt)
+        assertEquals(messages, component.state.value.messages)
+    }
+
+    @Test
+    fun onlySelectedServerTemplatesCanOpenParameterForm() {
+        val opened = mutableListOf<String>()
+        val component = ChatComponent(
+            DefaultComponentContext(LifecycleRegistry()),
+            onUseTemplate = { opened += it },
+            templates = object : ChatTemplateRepository {
+                override suspend fun categories() = listOf(ChatTemplateCategory("Ideas", listOf(
+                    ChatTemplate("remote", "Remote", "", "Ideas", false),
+                    ChatTemplate("local", "Local", "", "Ideas", true),
+                ), false))
+                override suspend fun createCategory(name: String) = Unit
+                override suspend fun createTemplate(draft: ChatTemplateDraft) = Unit
+            },
+            dispatcher = Dispatchers.Unconfined,
+        )
+
+        component.onIntent(ChatIntent.UseSelectedTemplate)
+        component.onIntent(ChatIntent.SelectTemplate("local"))
+        component.onIntent(ChatIntent.UseSelectedTemplate)
+        assertTrue(opened.isEmpty())
+        component.onIntent(ChatIntent.SelectTemplate("remote"))
+        component.onIntent(ChatIntent.UseSelectedTemplate)
+        assertEquals(listOf("remote"), opened)
+    }
+
+    @Test
+    fun blankPromptDoesNotChangeDraft() {
+        val component = ChatComponent(DefaultComponentContext(LifecycleRegistry()))
+        component.onIntent(ChatIntent.ChangeDraft("Original"))
+
+        component.applyPrompt("  ")
+
+        assertEquals("Original", component.state.value.draft)
+        assertEquals(null, component.state.value.pendingPrompt)
+    }
+
+    @Test
     fun sendAddsLocalUserMessageAndClearsDraft() {
         val component = ChatComponent(DefaultComponentContext(LifecycleRegistry()))
 

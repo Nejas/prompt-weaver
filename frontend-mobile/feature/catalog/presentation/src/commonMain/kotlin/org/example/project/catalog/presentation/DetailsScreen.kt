@@ -20,6 +20,7 @@ fun DetailsScreen(component: DetailsComponent) {
     val state by component.state.collectAsState()
     DetailsScreenContent(
         state = state,
+        canApply = component.canApply,
         onIntent = component::onIntent
     )
 }
@@ -27,7 +28,8 @@ fun DetailsScreen(component: DetailsComponent) {
 @Composable
 fun DetailsScreenContent(
     state: DetailsState,
-    onIntent: (DetailsIntent) -> Unit
+    onIntent: (DetailsIntent) -> Unit,
+    canApply: Boolean = false,
 ) {
     Column(
         modifier = Modifier.fillMaxSize().safeContentPadding().verticalScroll(rememberScrollState()).padding(CompliTheme.spacing.large),
@@ -90,6 +92,12 @@ fun DetailsScreenContent(
                 current.result?.let {
                     Text("Готовый промпт", style = CompliTheme.typography.titleMedium)
                     Text(it)
+                    if (canApply && it.isNotBlank()) {
+                        CompliPrimaryButton(
+                            text = "Использовать в чате",
+                            onClick = { onIntent(DetailsIntent.Apply) },
+                        )
+                    }
                 }
             }
         }

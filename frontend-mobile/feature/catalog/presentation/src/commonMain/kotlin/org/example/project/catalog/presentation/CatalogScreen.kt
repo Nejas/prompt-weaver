@@ -21,6 +21,7 @@ fun CatalogScreen(component: CatalogComponent) {
     CatalogScreenContent(
         state = state,
         hasAccount = component.hasAccount,
+        canOpenChat = component.canOpenChat,
         onIntent = component::onIntent
     )
 }
@@ -29,10 +30,14 @@ fun CatalogScreen(component: CatalogComponent) {
 fun CatalogScreenContent(
     state: CatalogState,
     hasAccount: Boolean,
-    onIntent: (CatalogIntent) -> Unit
+    onIntent: (CatalogIntent) -> Unit,
+    canOpenChat: Boolean = false,
 ) {
     Column(Modifier.fillMaxSize().safeContentPadding().padding(CompliTheme.spacing.large)) {
         Text("Каталог шаблонов", style = MaterialTheme.typography.headlineSmall)
+        if (canOpenChat) {
+            CompliTextButton(text = "Чат", onClick = { onIntent(CatalogIntent.OpenChat) })
+        }
         if (hasAccount) {
             CompliTextButton(text = "Аккаунт", onClick = { onIntent(CatalogIntent.Account) })
         } else {

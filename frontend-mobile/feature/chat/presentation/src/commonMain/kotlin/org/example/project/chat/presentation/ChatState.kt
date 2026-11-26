@@ -19,6 +19,7 @@ data class ChatState(
     val templateFormVisible: Boolean = false,
     val templateSaving: Boolean = false,
     val categorySaving: Boolean = false,
+    val pendingPrompt: String? = null,
 )
 
 enum class ChatModel { GeminiFlash }

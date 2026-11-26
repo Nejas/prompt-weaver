@@ -37,6 +37,7 @@ import org.example.project.ui.components.actions.CompliIconButton
 import org.example.project.ui.components.actions.CompliTextButton
 import org.example.project.ui.components.actions.CompliTonalButton
 import org.example.project.ui.components.containers.CompliCard
+import org.example.project.ui.components.containers.CompliConfirmationDialog
 import org.example.project.ui.components.containers.CompliSurface
 import org.example.project.ui.components.feedback.CompliContentState
 import org.example.project.ui.components.feedback.CompliContentStateType
@@ -68,6 +69,16 @@ fun ChatScreenContent(state: ChatState, onIntent: (ChatIntent) -> Unit) {
             TemplateLibrary(state, onIntent, Modifier.heightIn(max = libraryMaxHeight))
             Conversation(state, Modifier.weight(1f))
             Composer(state.draft, onIntent)
+        }
+        if (state.pendingPrompt != null) {
+            CompliConfirmationDialog(
+                title = "Заменить черновик?",
+                body = "В поле сообщения уже есть текст. Заменить его собранным промптом?",
+                confirmLabel = "Заменить",
+                dismissLabel = "Отмена",
+                onConfirm = { onIntent(ChatIntent.ConfirmDraftReplacement) },
+                onDismissRequest = { onIntent(ChatIntent.CancelDraftReplacement) },
+            )
         }
     }
 }
@@ -126,6 +137,9 @@ private fun TemplateLibrary(state: ChatState, onIntent: (ChatIntent) -> Unit, mo
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(template.title, style = CompliTheme.typography.titleSmall)
                             Text(template.description.ifBlank { "Описание не добавлено." }, style = CompliTheme.typography.bodySmall)
+                            if (!template.isLocal) {
+                                CompliTonalButton("Использовать", { onIntent(ChatIntent.UseSelectedTemplate) })
+                            }
                         }
                     }
                 }

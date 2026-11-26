@@ -13,11 +13,12 @@ class CatalogRoot(
     onRegister: () -> Unit = {},
     onLogin: () -> Unit = {},
     onAccount: (() -> Unit)? = null,
+    onChat: (() -> Unit)? = null,
 ) : ComponentContext by context {
     private val navigation = StackNavigation<Config>()
     val stack = childStack(source = navigation, serializer = Config.serializer(), initialConfiguration = Config.List, handleBackButton = true) { config, child ->
         when (config) {
-            Config.List -> Child.List(CatalogComponent(child, repository, { navigation.pushNew(Config.Details(it)) }, dispatcher, onRegister, onLogin, onAccount))
+            Config.List -> Child.List(CatalogComponent(child, repository, { navigation.pushNew(Config.Details(it)) }, dispatcher, onRegister, onLogin, onAccount, onChat))
             is Config.Details -> Child.Details(DetailsComponent(child, config.id, repository, dispatcher) { navigation.pop() })
         }
     }

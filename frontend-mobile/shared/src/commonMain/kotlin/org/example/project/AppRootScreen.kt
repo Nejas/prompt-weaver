@@ -12,6 +12,7 @@ import org.example.project.auth.presentation.LoginScreen
 import org.example.project.auth.presentation.RegistrationScreen
 import org.example.project.auth.presentation.SessionScreen
 import org.example.project.catalog.presentation.CatalogRootScreen
+import org.example.project.catalog.presentation.DetailsScreen
 import org.example.project.chat.presentation.ChatScreen
 import org.example.project.profile.presentation.ProfileScreen
 import org.example.project.settings.presentation.SettingsScreen
@@ -28,6 +29,7 @@ fun AppRootScreen(root: AppRoot) {
         is AppRoot.Child.Auth -> AuthFlowScreen(child.component)
         is AppRoot.Child.Catalog -> CatalogRootScreen(child.component)
         is AppRoot.Child.Chat -> ChatScreen(child.component)
+        is AppRoot.Child.TemplateDetails -> DetailsScreen(child.component)
         is AppRoot.Child.Profile -> ProfileScreen(child.component)
         is AppRoot.Child.Session -> SessionScreen(child.component)
         is AppRoot.Child.Settings -> SettingsScreen(child.component)

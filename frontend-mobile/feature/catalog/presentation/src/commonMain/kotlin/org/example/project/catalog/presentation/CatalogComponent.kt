@@ -23,6 +23,7 @@ class CatalogComponent(
     private val onRegister: () -> Unit = {},
     private val onLogin: () -> Unit = {},
     private val onAccount: (() -> Unit)? = null,
+    private val onChat: (() -> Unit)? = null,
 ) : ComponentContext by componentContext {
     private val scope = CoroutineScope(SupervisorJob() + mainDispatcher)
     private val mutableState = MutableStateFlow<CatalogState>(CatalogState.Loading)
@@ -41,6 +42,7 @@ class CatalogComponent(
             CatalogIntent.Register -> register()
             CatalogIntent.Login -> login()
             CatalogIntent.Account -> account()
+            CatalogIntent.OpenChat -> onChat?.invoke()
         }
     }
 
@@ -63,5 +65,6 @@ class CatalogComponent(
     fun register() = onRegister()
     fun login() = onLogin()
     val hasAccount get() = onAccount != null
+    val canOpenChat get() = onChat != null
     fun account() = onAccount?.invoke()
 }

@@ -17,4 +17,7 @@ sealed interface ChatIntent {
     data class ChangeTemplateDescription(val value: String) : ChatIntent
     data class ChangeTemplateCategory(val value: String) : ChatIntent
     data object CreateTemplate : ChatIntent
+    data object UseSelectedTemplate : ChatIntent
+    data object ConfirmDraftReplacement : ChatIntent
+    data object CancelDraftReplacement : ChatIntent
 }

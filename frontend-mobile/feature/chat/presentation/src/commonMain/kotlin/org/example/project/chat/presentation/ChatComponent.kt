@@ -22,6 +22,7 @@ class ChatComponent(
     private val onSettings: () -> Unit = {},
     private val templates: ChatTemplateRepository? = null,
     dispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val onUseTemplate: (String) -> Unit = {},
 ) : ComponentContext by context {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(ChatState())
@@ -66,6 +67,23 @@ class ChatComponent(
             is ChatIntent.ChangeTemplateDescription -> mutableState.value = state.value.copy(templateDescriptionDraft = intent.value)
             is ChatIntent.ChangeTemplateCategory -> mutableState.value = state.value.copy(templateCategoryDraft = intent.value)
             ChatIntent.CreateTemplate -> createTemplate()
+            ChatIntent.UseSelectedTemplate -> state.value.selectedTemplate
+                ?.takeUnless { it.isLocal }
+                ?.let { onUseTemplate(it.id) }
+            ChatIntent.ConfirmDraftReplacement -> {
+                val prompt = state.value.pendingPrompt ?: return
+                mutableState.value = state.value.copy(draft = prompt, pendingPrompt = null)
+            }
+            ChatIntent.CancelDraftReplacement -> mutableState.value = state.value.copy(pendingPrompt = null)
+        }
+    }
+
+    fun applyPrompt(text: String) {
+        if (text.isBlank()) return
+        mutableState.value = if (state.value.draft.isNotEmpty()) {
+            state.value.copy(pendingPrompt = text)
+        } else {
+            state.value.copy(draft = text, pendingPrompt = null)
         }
     }
 

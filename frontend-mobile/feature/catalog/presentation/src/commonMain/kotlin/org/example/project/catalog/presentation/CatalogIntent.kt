@@ -6,4 +6,5 @@ sealed interface CatalogIntent {
     data object Register : CatalogIntent
     data object Login : CatalogIntent
     data object Account : CatalogIntent
+    data object OpenChat : CatalogIntent
 }

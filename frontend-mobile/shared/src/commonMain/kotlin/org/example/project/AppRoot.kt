@@ -3,6 +3,7 @@ package org.example.project
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.pushNew
 import com.arkivanov.decompose.router.stack.replaceAll
@@ -21,6 +22,7 @@ import org.example.project.auth.domain.SessionRepository
 import org.example.project.auth.presentation.SessionComponent
 import org.example.project.catalog.domain.CatalogRepository
 import org.example.project.catalog.presentation.CatalogRoot
+import org.example.project.catalog.presentation.DetailsComponent
 import org.example.project.chat.presentation.ChatComponent
 import org.example.project.profile.presentation.ProfileComponent
 import org.example.project.settings.presentation.SettingsComponent
@@ -64,16 +66,28 @@ class AppRoot(
                     onRegister = { navigation.replaceAll(Config.Auth) },
                     onLogin = { navigation.replaceAll(Config.Auth) },
                     onAccount = { navigation.pushNew(Config.Profile) },
+                    onChat = { openChat() },
                 ),
             )
             Config.Chat -> Child.Chat(
                 ChatComponent(
                     context = child,
                     onProfile = { navigation.pushNew(Config.Profile) },
-                    onCatalog = { navigation.pushNew(Config.Catalog) },
+                    onCatalog = { navigation.bringToFront(Config.Catalog) },
                     onSettings = { navigation.pushNew(Config.Settings) },
                     templates = chatTemplates,
                     dispatcher = dispatcher,
+                    onUseTemplate = { navigation.pushNew(Config.TemplateDetails(it)) },
+                ),
+            )
+            is Config.TemplateDetails -> Child.TemplateDetails(
+                DetailsComponent(
+                    context = child,
+                    versionId = config.versionId,
+                    repository = catalogRepository,
+                    dispatcher = dispatcher,
+                    onApply = { applyPromptToChat(it) },
+                    back = { navigation.pop() },
                 ),
             )
             Config.Settings -> Child.Settings(SettingsComponent(child, mutableSettings, onBack = { navigation.pop() }))
@@ -111,6 +125,19 @@ class AppRoot(
         }
     }
 
+    private fun openChat() {
+        navigation.bringToFront(Config.Chat)
+    }
+
+    private fun applyPromptToChat(text: String) {
+        if (stack.value.active.instance !is Child.TemplateDetails) return
+        val chat = stack.value.items.map { it.instance }.filterIsInstance<Child.Chat>().lastOrNull()
+            ?: return
+        navigation.pop { popped ->
+            if (popped) chat.component.applyPrompt(text)
+        }
+    }
+
     init {
         lifecycle.doOnDestroy { scope.cancel() }
         scope.launch {
@@ -133,6 +160,7 @@ class AppRoot(
         @Serializable data object Auth : Config
         @Serializable data object Catalog : Config
         @Serializable data object Chat : Config
+        @Serializable data class TemplateDetails(val versionId: String) : Config
         @Serializable data object Profile : Config
         @Serializable data object Session : Config
         @Serializable data object Settings : Config
@@ -143,6 +171,7 @@ class AppRoot(
         data class Auth(val component: AuthFlowComponent) : Child
         data class Catalog(val component: CatalogRoot) : Child
         data class Chat(val component: ChatComponent) : Child
+        data class TemplateDetails(val component: DetailsComponent) : Child
         data class Profile(val component: ProfileComponent) : Child
         data class Session(val component: SessionComponent) : Child
         data class Settings(val component: SettingsComponent) : Child
