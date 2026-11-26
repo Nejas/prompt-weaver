@@ -21,6 +21,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":core:ui"))
+            implementation(project(":feature:chat:domain"))
             implementation(libs.decompose)
             implementation(libs.coroutines.core)
             implementation(libs.compose.runtime)

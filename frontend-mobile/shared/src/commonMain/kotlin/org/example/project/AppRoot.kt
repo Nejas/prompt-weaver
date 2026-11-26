@@ -25,6 +25,7 @@ import org.example.project.chat.presentation.ChatComponent
 import org.example.project.profile.presentation.ProfileComponent
 import org.example.project.settings.presentation.SettingsComponent
 import org.example.project.settings.presentation.SettingsState
+import org.example.project.chat.domain.ChatTemplateRepository
 
 class AppRoot(
     context: ComponentContext,
@@ -32,6 +33,7 @@ class AppRoot(
     authRepository: AuthRepository,
     sessionRepository: SessionRepository,
     dispatcher: CoroutineDispatcher,
+    private val chatTemplates: ChatTemplateRepository? = null,
 ) : ComponentContext by context {
     private val navigation = StackNavigation<Config>()
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -70,6 +72,8 @@ class AppRoot(
                     onProfile = { navigation.pushNew(Config.Profile) },
                     onCatalog = { navigation.pushNew(Config.Catalog) },
                     onSettings = { navigation.pushNew(Config.Settings) },
+                    templates = chatTemplates,
+                    dispatcher = dispatcher,
                 ),
             )
             Config.Settings -> Child.Settings(SettingsComponent(child, mutableSettings, onBack = { navigation.pop() }))

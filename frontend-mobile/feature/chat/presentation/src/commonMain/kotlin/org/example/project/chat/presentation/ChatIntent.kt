@@ -6,4 +6,15 @@ sealed interface ChatIntent {
     data object OpenProfile : ChatIntent
     data object OpenCatalog : ChatIntent
     data object OpenSettings : ChatIntent
+    data object RetryTemplates : ChatIntent
+    data class SelectCategory(val name: String) : ChatIntent
+    data class SelectTemplate(val id: String) : ChatIntent
+    data class ChangeCategoryDraft(val value: String) : ChatIntent
+    data object CreateCategory : ChatIntent
+    data object ShowTemplateForm : ChatIntent
+    data object HideTemplateForm : ChatIntent
+    data class ChangeTemplateTitle(val value: String) : ChatIntent
+    data class ChangeTemplateDescription(val value: String) : ChatIntent
+    data class ChangeTemplateCategory(val value: String) : ChatIntent
+    data object CreateTemplate : ChatIntent
 }

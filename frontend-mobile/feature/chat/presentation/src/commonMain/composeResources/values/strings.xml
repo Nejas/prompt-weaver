@@ -19,4 +19,5 @@
     <string name="chat_attach">Прикрепить файл</string>
     <string name="chat_send">Отправить сообщение</string>
     <string name="chat_settings">Настройки</string>
+    <string name="chat_templates">Шаблоны промптов</string>
 </resources>

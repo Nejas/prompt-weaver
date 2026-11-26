@@ -3,14 +3,20 @@ package org.example.project.chat.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -28,7 +34,13 @@ import org.example.project.chat.presentation.generated.resources.Res
 import org.example.project.chat.presentation.generated.resources.*
 import org.example.project.ui.components.actions.CompliButtonDefaults
 import org.example.project.ui.components.actions.CompliIconButton
+import org.example.project.ui.components.actions.CompliTextButton
+import org.example.project.ui.components.actions.CompliTonalButton
+import org.example.project.ui.components.containers.CompliCard
 import org.example.project.ui.components.containers.CompliSurface
+import org.example.project.ui.components.feedback.CompliContentState
+import org.example.project.ui.components.feedback.CompliContentStateType
+import org.example.project.ui.components.inputs.CompliTextField
 import org.example.project.ui.theme.CompliTheme
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -41,7 +53,8 @@ fun ChatScreen(component: ChatComponent) {
 
 @Composable
 fun ChatScreenContent(state: ChatState, onIntent: (ChatIntent) -> Unit) {
-    Box(Modifier.fillMaxSize().background(CompliTheme.colors.background)) {
+    BoxWithConstraints(Modifier.fillMaxSize().imePadding().background(CompliTheme.colors.background)) {
+        val libraryMaxHeight = maxHeight * 0.5f
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 CompliIconButton({ onIntent(ChatIntent.OpenCatalog) }, "Каталог шаблонов", colors = CompliButtonDefaults.textColors(), size = 48.dp) { Text("◷", color = CompliTheme.colors.onSurfaceVariant) }
@@ -52,8 +65,115 @@ fun ChatScreenContent(state: ChatState, onIntent: (ChatIntent) -> Unit) {
                 CompliIconButton({ onIntent(ChatIntent.OpenSettings) }, stringResource(Res.string.chat_settings), colors = CompliButtonDefaults.textColors(), size = 40.dp) { Text("⚙", color = CompliTheme.colors.onSurfaceVariant) }
                 CompliIconButton({ onIntent(ChatIntent.OpenProfile) }, stringResource(Res.string.chat_profile), colors = CompliButtonDefaults.textColors(), size = 48.dp) { Text("♙", color = CompliTheme.colors.onSurfaceVariant) }
             }
+            TemplateLibrary(state, onIntent, Modifier.heightIn(max = libraryMaxHeight))
             Conversation(state, Modifier.weight(1f))
             Composer(state.draft, onIntent)
+        }
+    }
+}
+
+@Composable
+private fun TemplateLibrary(state: ChatState, onIntent: (ChatIntent) -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+            .padding(horizontal = CompliTheme.spacing.large, vertical = CompliTheme.spacing.small),
+        verticalArrangement = Arrangement.spacedBy(CompliTheme.spacing.small),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(Res.string.chat_templates), Modifier.weight(1f), style = CompliTheme.typography.titleSmall)
+            CompliTextButton("Новый шаблон", { onIntent(ChatIntent.ShowTemplateForm) }, enabled = !state.templateSaving)
+        }
+        state.templatesError?.let { message ->
+            TemplateState(
+                CompliContentStateType.Error,
+                message,
+                action = { CompliTextButton("Повторить загрузку", { onIntent(ChatIntent.RetryTemplates) }) },
+            )
+        }
+        when {
+            state.templatesLoading -> TemplateState(CompliContentStateType.Loading, "Загружаем шаблоны")
+            state.templateCategories.isEmpty() -> TemplateState(CompliContentStateType.Empty, "Шаблонов пока нет")
+            else -> {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(state.templateCategories, key = { it.name }) { category ->
+                        CompliTonalButton(
+                            text = category.name,
+                            onClick = { onIntent(ChatIntent.SelectCategory(category.name)) },
+                        )
+                    }
+                }
+                state.selectedCategory?.let { selected ->
+                    val category = state.templateCategories.firstOrNull { it.name == selected }
+                    category?.templates?.let { templates ->
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth().heightIn(max = 180.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            items(templates, key = { it.id }) { template ->
+                                CompliCard(Modifier.fillMaxWidth()) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        CompliTextButton(template.title, { onIntent(ChatIntent.SelectTemplate(template.id)) })
+                                        if (template.description.isNotBlank()) Text(template.description, style = CompliTheme.typography.bodySmall)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (category?.templates.isNullOrEmpty()) Text("В этой категории пока нет шаблонов.", style = CompliTheme.typography.bodySmall)
+                }
+                state.selectedTemplate?.let { template ->
+                    CompliCard(Modifier.fillMaxWidth(), color = CompliTheme.colors.primaryContainer) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(template.title, style = CompliTheme.typography.titleSmall)
+                            Text(template.description.ifBlank { "Описание не добавлено." }, style = CompliTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
+        CategoryForm(state, onIntent)
+        if (state.templateFormVisible) TemplateForm(state, onIntent)
+    }
+}
+
+@Composable
+private fun TemplateState(
+    type: CompliContentStateType,
+    message: String,
+    action: (@Composable () -> Unit)? = null,
+) = CompliContentState(
+    state = type,
+    modifier = Modifier.fillMaxWidth(),
+    title = { Text(message) },
+    action = action,
+)
+
+@Composable
+private fun CategoryForm(state: ChatState, onIntent: (ChatIntent) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        CompliTextField(
+            value = state.categoryDraft,
+            onValueChange = { onIntent(ChatIntent.ChangeCategoryDraft(it)) },
+            modifier = Modifier.fillMaxWidth(),
+            label = "Новая категория",
+            singleLine = true,
+        )
+        CompliTextButton("Создать категорию", { onIntent(ChatIntent.CreateCategory) }, loading = state.categorySaving)
+    }
+}
+
+@Composable
+private fun TemplateForm(state: ChatState, onIntent: (ChatIntent) -> Unit) {
+    CompliCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Новый локальный шаблон", style = CompliTheme.typography.titleSmall)
+            CompliTextField(state.templateTitleDraft, { onIntent(ChatIntent.ChangeTemplateTitle(it)) }, Modifier.fillMaxWidth(), label = "Название", singleLine = true, enabled = !state.templateSaving)
+            CompliTextField(state.templateDescriptionDraft, { onIntent(ChatIntent.ChangeTemplateDescription(it)) }, Modifier.fillMaxWidth(), label = "Описание", enabled = !state.templateSaving)
+            CompliTextField(state.templateCategoryDraft, { onIntent(ChatIntent.ChangeTemplateCategory(it)) }, Modifier.fillMaxWidth(), label = "Категория", singleLine = true, enabled = !state.templateSaving)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CompliTonalButton("Отмена", { onIntent(ChatIntent.HideTemplateForm) }, enabled = !state.templateSaving)
+                CompliTonalButton("Сохранить", { onIntent(ChatIntent.CreateTemplate) }, loading = state.templateSaving)
+            }
         }
     }
 }

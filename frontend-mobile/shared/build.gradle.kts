@@ -41,12 +41,17 @@ kotlin {
         androidMain.dependencies {
             implementation(project(":core:ui"))
             implementation(project(":feature:chat:presentation"))
+            implementation(project(":feature:chat:domain"))
+            implementation(project(":feature:chat:data"))
             implementation(project(":feature:profile:presentation"))
             implementation(project(":feature:auth:presentation"))
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
         }
         commonMain.dependencies {
+            implementation(libs.datastore.preferences)
+            implementation(project(":feature:chat:data"))
+            implementation(project(":feature:chat:domain"))
             implementation(project(":core:network"))
             implementation(project(":core:ui"))
             api(libs.koin.core)

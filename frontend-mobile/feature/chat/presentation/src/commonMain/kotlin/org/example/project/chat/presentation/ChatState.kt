@@ -1,9 +1,24 @@
 package org.example.project.chat.presentation
 
+import org.example.project.chat.domain.ChatTemplateCategory
+import org.example.project.chat.domain.ChatTemplate
+
 data class ChatState(
     val model: ChatModel = ChatModel.GeminiFlash,
     val draft: String = "",
     val messages: List<ChatMessage> = listOf(ChatMessage.DemoUser, ChatMessage.DemoAssistant),
+    val templateCategories: List<ChatTemplateCategory> = emptyList(),
+    val templatesLoading: Boolean = false,
+    val templatesError: String? = null,
+    val selectedCategory: String? = null,
+    val selectedTemplate: ChatTemplate? = null,
+    val categoryDraft: String = "",
+    val templateTitleDraft: String = "",
+    val templateDescriptionDraft: String = "",
+    val templateCategoryDraft: String = "",
+    val templateFormVisible: Boolean = false,
+    val templateSaving: Boolean = false,
+    val categorySaving: Boolean = false,
 )
 
 enum class ChatModel { GeminiFlash }
