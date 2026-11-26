@@ -18,7 +18,6 @@ import org.example.project.chat.domain.ChatTemplateDraft
 class ChatComponent(
     context: ComponentContext,
     private val onProfile: () -> Unit = {},
-    private val onCatalog: () -> Unit = {},
     private val onSettings: () -> Unit = {},
     private val templates: ChatTemplateRepository? = null,
     dispatcher: CoroutineDispatcher = Dispatchers.Main,
@@ -32,40 +31,38 @@ class ChatComponent(
     init { lifecycle.doOnDestroy { scope.cancel() }; loadTemplates() }
 
     fun onIntent(intent: ChatIntent) {
-        if (state.value.templateSaving && (
+        if ((state.value.templateSaving || state.value.categorySaving) && (
             intent is ChatIntent.ChangeTemplateTitle || intent is ChatIntent.ChangeTemplateDescription ||
                 intent is ChatIntent.ChangeTemplateCategory || intent is ChatIntent.SelectCategory ||
+                intent is ChatIntent.ChangeCategoryDraft || intent is ChatIntent.SetCreatingCategory ||
                 intent == ChatIntent.ShowTemplateForm || intent == ChatIntent.HideTemplateForm ||
-                intent == ChatIntent.CreateTemplate
+                intent == ChatIntent.CreateTemplate || intent == ChatIntent.CreateCategory
             )) return
         when (intent) {
             is ChatIntent.ChangeDraft -> mutableState.value = state.value.copy(draft = intent.value)
             ChatIntent.Send -> send()
             ChatIntent.OpenProfile -> onProfile()
-            ChatIntent.OpenCatalog -> onCatalog()
             ChatIntent.OpenSettings -> onSettings()
             ChatIntent.RetryTemplates -> loadTemplates()
             is ChatIntent.SelectCategory -> mutableState.value = state.value.copy(
                 selectedCategory = intent.name,
                 selectedTemplate = null,
-                templateCategoryDraft = intent.name,
             )
             is ChatIntent.SelectTemplate -> mutableState.value = state.value.copy(
                 selectedTemplate = state.value.templateCategories
                     .flatMap { it.templates }
                     .firstOrNull { it.id == intent.id },
             )
-            is ChatIntent.ChangeCategoryDraft -> mutableState.value = state.value.copy(categoryDraft = intent.value)
+            is ChatIntent.ChangeCategoryDraft -> mutableState.value = state.value.copy(categoryDraft = intent.value, templateFormError = null)
             ChatIntent.CreateCategory -> createCategory()
-            ChatIntent.ShowTemplateForm -> mutableState.value = state.value.copy(
-                templateFormVisible = true,
-                templateCategoryDraft = state.value.selectedCategory.orEmpty(),
-                templatesError = null,
-            )
+            ChatIntent.ShowTemplateForm -> showTemplateForm()
             ChatIntent.HideTemplateForm -> mutableState.value = state.value.copy(templateFormVisible = false)
-            is ChatIntent.ChangeTemplateTitle -> mutableState.value = state.value.copy(templateTitleDraft = intent.value)
-            is ChatIntent.ChangeTemplateDescription -> mutableState.value = state.value.copy(templateDescriptionDraft = intent.value)
-            is ChatIntent.ChangeTemplateCategory -> mutableState.value = state.value.copy(templateCategoryDraft = intent.value)
+            is ChatIntent.ChangeTemplateTitle -> mutableState.value = state.value.copy(templateTitleDraft = intent.value, templateFormError = null)
+            is ChatIntent.ChangeTemplateDescription -> mutableState.value = state.value.copy(templateDescriptionDraft = intent.value, templateFormError = null)
+            is ChatIntent.ChangeTemplateCategory -> mutableState.value = state.value.copy(
+                templateCategoryDraft = intent.value, creatingCategory = false, templateFormError = null,
+            )
+            is ChatIntent.SetCreatingCategory -> mutableState.value = state.value.copy(creatingCategory = intent.value, templateFormError = null)
             ChatIntent.CreateTemplate -> createTemplate()
             ChatIntent.UseSelectedTemplate -> state.value.selectedTemplate
                 ?.takeUnless { it.isLocal }
@@ -76,6 +73,19 @@ class ChatComponent(
             }
             ChatIntent.CancelDraftReplacement -> mutableState.value = state.value.copy(pendingPrompt = null)
         }
+    }
+
+    private fun showTemplateForm() {
+        val current = state.value
+        val category = current.templateCategoryDraft.ifBlank {
+            current.selectedCategory ?: current.templateCategories.firstOrNull()?.name.orEmpty()
+        }
+        mutableState.value = current.copy(
+            templateFormVisible = true,
+            templateCategoryDraft = category,
+            creatingCategory = current.creatingCategory || current.templateCategories.isEmpty(),
+            templateFormError = null,
+        )
     }
 
     fun applyPrompt(text: String) {
@@ -121,28 +131,29 @@ class ChatComponent(
     private fun createCategory() {
         val repository = templates ?: return
         if (state.value.categorySaving) return
-        val draft = state.value.categoryDraft
         val name = state.value.categoryDraft.trim()
         if (name.isEmpty()) {
-            mutableState.value = state.value.copy(templatesError = "Введите название категории.")
+            mutableState.value = state.value.copy(templateFormError = "Введите название категории.")
             return
         }
-        mutableState.value = state.value.copy(categorySaving = true, templatesError = null)
+        mutableState.value = state.value.copy(categorySaving = true, templateFormError = null)
         scope.launch {
             try {
                 repository.createCategory(name)
                 mutableState.value = state.value.copy(
-                    categoryDraft = if (state.value.categoryDraft == draft) "" else state.value.categoryDraft,
+                    categoryDraft = "",
+                    templateCategoryDraft = name,
+                    creatingCategory = false,
                     selectedCategory = name,
                     selectedTemplate = null,
                     categorySaving = false,
-                    templatesError = null,
+                    templateFormError = null,
                 )
                 loadTemplates()
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
-                mutableState.value = state.value.copy(categorySaving = false, templatesError = "Не удалось сохранить категорию.")
+                mutableState.value = state.value.copy(categorySaving = false, templateFormError = "Не удалось сохранить категорию.")
             }
         }
     }
@@ -150,32 +161,36 @@ class ChatComponent(
     private fun createTemplate() {
         val repository = templates ?: return
         val current = state.value
-        if (current.templateTitleDraft.isBlank() || current.templateCategoryDraft.isBlank()) {
-            mutableState.value = current.copy(templatesError = "Укажите название шаблона и категорию.")
+        val category = (if (current.creatingCategory) current.categoryDraft else current.templateCategoryDraft).trim()
+        if (current.templateTitleDraft.isBlank() || category.isBlank()) {
+            mutableState.value = current.copy(templateFormError = "Укажите название шаблона и категорию.")
             return
         }
-        mutableState.value = current.copy(templateSaving = true, templatesError = null)
+        mutableState.value = current.copy(templateSaving = true, templateFormError = null)
         scope.launch {
             try {
                 repository.createTemplate(ChatTemplateDraft(
                     title = current.templateTitleDraft,
                     description = current.templateDescriptionDraft,
-                    category = current.templateCategoryDraft,
+                    category = category,
                 ))
                 mutableState.value = state.value.copy(
                     templateTitleDraft = "",
                     templateDescriptionDraft = "",
                     templateCategoryDraft = "",
+                    categoryDraft = "",
+                    creatingCategory = false,
+                    templateFormError = null,
                     templateFormVisible = false,
                     templateSaving = false,
-                    selectedCategory = current.templateCategoryDraft.trim(),
+                    selectedCategory = category,
                     selectedTemplate = null,
                 )
                 loadTemplates()
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
-                mutableState.value = state.value.copy(templateSaving = false, templatesError = "Не удалось сохранить шаблон.")
+                mutableState.value = state.value.copy(templateSaving = false, templateFormError = "Не удалось сохранить шаблон.")
             }
         }
     }

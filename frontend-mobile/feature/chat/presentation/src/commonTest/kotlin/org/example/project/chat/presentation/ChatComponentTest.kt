@@ -107,6 +107,8 @@ class ChatComponentTest {
 
         assertEquals("Ideas", component.state.value.selectedCategory)
         assertEquals("idea", component.state.value.selectedTemplate?.id)
+        component.onIntent(ChatIntent.SelectCategory("Other"))
+        assertEquals(null, component.state.value.selectedTemplate)
     }
 
     @Test
@@ -119,7 +121,8 @@ class ChatComponentTest {
 
         component.onIntent(ChatIntent.CreateCategory)
 
-        assertEquals("Введите название категории.", component.state.value.templatesError)
+        assertEquals("Введите название категории.", component.state.value.templateFormError)
+        assertEquals(null, component.state.value.templatesError)
     }
 
     @Test
@@ -155,7 +158,7 @@ class ChatComponentTest {
     }
 
     @Test
-    fun categorySaveKeepsNewInputAndIgnoresRepeatedSubmit() {
+    fun categorySaveBlocksEditsAndRepeatedSubmit() {
         val gate = CompletableDeferred<Unit>()
         val repository = RecordingTemplateRepository(saveGate = gate)
         val component = ChatComponent(DefaultComponentContext(LifecycleRegistry()), templates = repository, dispatcher = Dispatchers.Unconfined)
@@ -164,10 +167,13 @@ class ChatComponentTest {
         component.onIntent(ChatIntent.CreateCategory)
         component.onIntent(ChatIntent.ChangeCategoryDraft("Next"))
         component.onIntent(ChatIntent.CreateCategory)
+        assertEquals("First", component.state.value.categoryDraft)
         gate.complete(Unit)
 
         assertEquals(listOf("First"), repository.createdCategories)
-        assertEquals("Next", component.state.value.categoryDraft)
+        assertEquals("", component.state.value.categoryDraft)
+        assertEquals("First", component.state.value.templateCategoryDraft)
+        assertEquals(false, component.state.value.creatingCategory)
         assertEquals(false, component.state.value.categorySaving)
     }
 
@@ -185,9 +191,11 @@ class ChatComponentTest {
         component.onIntent(ChatIntent.CreateTemplate)
 
         component.onIntent(ChatIntent.ChangeTemplateTitle("Changed"))
+        component.onIntent(ChatIntent.SetCreatingCategory(true))
         component.onIntent(ChatIntent.HideTemplateForm)
         component.onIntent(ChatIntent.CreateTemplate)
         assertEquals("Idea", component.state.value.templateTitleDraft)
+        assertEquals(false, component.state.value.creatingCategory)
         assertTrue(component.state.value.templateFormVisible)
         gate.complete(Unit)
 
@@ -211,7 +219,89 @@ class ChatComponentTest {
         assertEquals("Idea", component.state.value.templateTitleDraft)
         assertTrue(component.state.value.templateFormVisible)
         assertEquals(false, component.state.value.templateSaving)
-        assertEquals("Не удалось сохранить шаблон.", component.state.value.templatesError)
+        assertEquals("Не удалось сохранить шаблон.", component.state.value.templateFormError)
+        assertEquals(null, component.state.value.templatesError)
+    }
+
+    @Test
+    fun openingSheetUsesSelectedCategoryAndPreservesDraftWhenReopened() {
+        val component = ChatComponent(DefaultComponentContext(LifecycleRegistry()), templates = FakeTemplateRepository, dispatcher = Dispatchers.Unconfined)
+        component.onIntent(ChatIntent.SelectCategory("Ideas"))
+        component.onIntent(ChatIntent.ShowTemplateForm)
+        assertEquals("Ideas", component.state.value.templateCategoryDraft)
+        assertEquals(false, component.state.value.creatingCategory)
+
+        component.onIntent(ChatIntent.ChangeTemplateTitle("Draft"))
+        component.onIntent(ChatIntent.ChangeTemplateDescription("Description"))
+        component.onIntent(ChatIntent.SetCreatingCategory(true))
+        component.onIntent(ChatIntent.ChangeCategoryDraft("Personal"))
+        component.onIntent(ChatIntent.HideTemplateForm)
+        assertEquals(false, component.state.value.templateFormVisible)
+        component.onIntent(ChatIntent.ShowTemplateForm)
+
+        assertEquals("Draft", component.state.value.templateTitleDraft)
+        assertEquals("Description", component.state.value.templateDescriptionDraft)
+        assertEquals("Personal", component.state.value.categoryDraft)
+        assertEquals(true, component.state.value.creatingCategory)
+    }
+
+    @Test
+    fun emptyCatalogStartsWithNewCategoryAndSavesTemplateInOneOperation() {
+        val repository = RecordingTemplateRepository(includeServerTemplates = false)
+        val component = ChatComponent(DefaultComponentContext(LifecycleRegistry()), templates = repository, dispatcher = Dispatchers.Unconfined)
+        component.onIntent(ChatIntent.ShowTemplateForm)
+        assertEquals(true, component.state.value.creatingCategory)
+        component.onIntent(ChatIntent.ChangeTemplateTitle("First"))
+        component.onIntent(ChatIntent.ChangeTemplateDescription("Description"))
+        component.onIntent(ChatIntent.ChangeCategoryDraft(" Personal "))
+
+        component.onIntent(ChatIntent.CreateTemplate)
+
+        assertEquals(listOf(ChatTemplateDraft("First", "Description", "Personal")), repository.createdTemplates)
+        assertTrue(repository.createdCategories.isEmpty())
+        assertEquals("Personal", component.state.value.selectedCategory)
+        assertEquals("Personal", component.state.value.templateCategories.single().name)
+        assertEquals(false, component.state.value.templateFormVisible)
+        assertEquals("", component.state.value.categoryDraft)
+    }
+
+    @Test
+    fun creatingOnlyCategoryKeepsSheetAndTemplateDraftThenSavesToThatCategory() {
+        val repository = RecordingTemplateRepository()
+        val component = ChatComponent(DefaultComponentContext(LifecycleRegistry()), templates = repository, dispatcher = Dispatchers.Unconfined)
+        component.onIntent(ChatIntent.ShowTemplateForm)
+        component.onIntent(ChatIntent.ChangeTemplateTitle("First"))
+        component.onIntent(ChatIntent.ChangeTemplateDescription("Description"))
+        component.onIntent(ChatIntent.SetCreatingCategory(true))
+        component.onIntent(ChatIntent.ChangeCategoryDraft("Personal"))
+
+        component.onIntent(ChatIntent.CreateCategory)
+
+        assertEquals(true, component.state.value.templateFormVisible)
+        assertEquals("First", component.state.value.templateTitleDraft)
+        assertEquals("Description", component.state.value.templateDescriptionDraft)
+        assertEquals("Personal", component.state.value.templateCategoryDraft)
+        assertEquals(false, component.state.value.creatingCategory)
+        component.onIntent(ChatIntent.CreateTemplate)
+        assertEquals(listOf(ChatTemplateDraft("First", "Description", "Personal")), repository.createdTemplates)
+    }
+
+    @Test
+    fun formErrorsRemainSeparateFromCatalogLoadErrors() {
+        val repository = RecordingTemplateRepository(failNextLoad = true, failTemplateSave = true)
+        val component = ChatComponent(DefaultComponentContext(LifecycleRegistry()), templates = repository, dispatcher = Dispatchers.Unconfined)
+        val loadError = component.state.value.templatesError
+        assertTrue(loadError != null)
+        component.onIntent(ChatIntent.ShowTemplateForm)
+        component.onIntent(ChatIntent.ChangeTemplateTitle("First"))
+        component.onIntent(ChatIntent.ChangeCategoryDraft("Personal"))
+        component.onIntent(ChatIntent.CreateTemplate)
+        assertEquals(loadError, component.state.value.templatesError)
+        assertEquals("Не удалось сохранить шаблон.", component.state.value.templateFormError)
+
+        component.onIntent(ChatIntent.RetryTemplates)
+        assertEquals(null, component.state.value.templatesError)
+        assertEquals("Не удалось сохранить шаблон.", component.state.value.templateFormError)
     }
 }
 
@@ -228,6 +318,7 @@ private class RecordingTemplateRepository(
     private var failNextLoad: Boolean = false,
     private val saveGate: CompletableDeferred<Unit>? = null,
     private val failTemplateSave: Boolean = false,
+    private val includeServerTemplates: Boolean = true,
 ) : ChatTemplateRepository {
     val createdCategories = mutableListOf<String>()
     val createdTemplates = mutableListOf<ChatTemplateDraft>()
@@ -242,7 +333,7 @@ private class RecordingTemplateRepository(
                 ChatTemplateCategory(category, drafts.mapIndexed { index, draft ->
                     ChatTemplate("local-$index", draft.title, draft.description, category, true)
                 }, true)
-            } + FakeTemplateRepository.categories()
+            } + if (includeServerTemplates) FakeTemplateRepository.categories() else emptyList()
     }
 
     override suspend fun createCategory(name: String) {

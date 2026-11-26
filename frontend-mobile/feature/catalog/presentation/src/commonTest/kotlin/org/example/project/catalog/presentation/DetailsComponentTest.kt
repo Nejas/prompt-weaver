@@ -81,15 +81,6 @@ class DetailsComponentTest {
         component.onIntent(DetailsIntent.Back)
         assertTrue(backed)
     }
-    @Test fun navigationOpensDetailsAndReturnsToList() = runTest {
-        val repo = DetailsFake(TemplateDetails(TemplateSummary("v1", "", "", "", ""), "", emptyList()))
-        val root = CatalogRoot(DefaultComponentContext(LifecycleRegistry()), repo, StandardTestDispatcher(testScheduler))
-        val catalog = (root.stack.value.active.instance as CatalogRoot.Child.List).component
-        catalog.onIntent(CatalogIntent.SelectTemplate("v1"))
-        val details = assertIs<CatalogRoot.Child.Details>(root.stack.value.active.instance)
-        details.component.onIntent(DetailsIntent.Back)
-        assertIs<CatalogRoot.Child.List>(root.stack.value.active.instance)
-    }
     @Test fun errorAndRetry() = runTest {
         val repo = DetailsFake(TemplateDetails(TemplateSummary("v1", "", "", "", ""), "", emptyList()))
         repo.fail = true

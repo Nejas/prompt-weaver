@@ -14,8 +14,6 @@ import org.example.project.catalog.domain.TemplateDetails
 import org.example.project.catalog.domain.TemplatePage
 import org.example.project.catalog.domain.TemplateParameter
 import org.example.project.catalog.domain.TemplateSummary
-import org.example.project.catalog.presentation.CatalogIntent
-import org.example.project.catalog.presentation.CatalogRoot
 import org.example.project.catalog.presentation.DetailsIntent
 import org.example.project.chat.domain.ChatTemplate
 import org.example.project.chat.domain.ChatTemplateCategory
@@ -23,6 +21,7 @@ import org.example.project.chat.domain.ChatTemplateDraft
 import org.example.project.chat.domain.ChatTemplateRepository
 import org.example.project.chat.presentation.ChatComponent
 import org.example.project.chat.presentation.ChatIntent
+import org.example.project.profile.presentation.ProfileIntent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -48,7 +47,7 @@ class ChatTemplateFlowTest {
     }
 
     @Test
-    fun cancellingDetailsPreservesDraftAndCatalogNavigationReusesChat() {
+    fun cancellingDetailsPreservesDraftAndProfileNavigationReusesChat() {
         val root = createRoot()
         val chat = openChat(root)
         chat.onIntent(ChatIntent.ChangeDraft("My draft"))
@@ -58,7 +57,9 @@ class ChatTemplateFlowTest {
         assertSame(chat, assertIs<AppRoot.Child.Chat>(root.stack.value.active.instance).component)
         assertEquals("My draft", chat.state.value.draft)
 
-        chat.onIntent(ChatIntent.OpenCatalog)
+        chat.onIntent(ChatIntent.OpenProfile)
+        val profile = assertIs<AppRoot.Child.Profile>(root.stack.value.active.instance).component
+        profile.onIntent(ProfileIntent.OpenChat)
         assertSame(chat, openChat(root))
         assertEquals("My draft", chat.state.value.draft)
     }
@@ -85,9 +86,6 @@ class ChatTemplateFlowTest {
     }
 
     private fun openChat(root: AppRoot): ChatComponent {
-        val catalog = assertIs<AppRoot.Child.Catalog>(root.stack.value.active.instance).component
-        val list = assertIs<CatalogRoot.Child.List>(catalog.stack.value.active.instance).component
-        list.onIntent(CatalogIntent.OpenChat)
         return assertIs<AppRoot.Child.Chat>(root.stack.value.active.instance).component
     }
 

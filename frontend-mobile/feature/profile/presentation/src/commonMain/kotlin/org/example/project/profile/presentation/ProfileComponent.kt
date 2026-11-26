@@ -28,7 +28,7 @@ data class ProfileState(
 
 sealed interface ProfileIntent {
     data object Back : ProfileIntent
-    data object OpenCatalog : ProfileIntent
+    data object OpenChat : ProfileIntent
     data object Logout : ProfileIntent
     data object OpenSettings : ProfileIntent
 }
@@ -39,7 +39,7 @@ class ProfileComponent(
     dispatcher: CoroutineDispatcher = Dispatchers.Main,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val onBack: () -> Unit = {},
-    private val onCatalog: () -> Unit = {},
+    private val onChat: () -> Unit = {},
     private val onLogout: () -> Unit = {},
     private val onSettings: () -> Unit = {},
 ) : ComponentContext by context {
@@ -79,7 +79,7 @@ class ProfileComponent(
     fun onIntent(intent: ProfileIntent) {
         when (intent) {
             ProfileIntent.Back -> onBack()
-            ProfileIntent.OpenCatalog -> onCatalog()
+            ProfileIntent.OpenChat -> onChat()
             ProfileIntent.Logout -> performLogout()
             ProfileIntent.OpenSettings -> onSettings()
         }

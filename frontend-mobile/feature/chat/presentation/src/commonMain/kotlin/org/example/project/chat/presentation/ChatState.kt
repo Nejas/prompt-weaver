@@ -17,6 +17,8 @@ data class ChatState(
     val templateDescriptionDraft: String = "",
     val templateCategoryDraft: String = "",
     val templateFormVisible: Boolean = false,
+    val creatingCategory: Boolean = false,
+    val templateFormError: String? = null,
     val templateSaving: Boolean = false,
     val categorySaving: Boolean = false,
     val pendingPrompt: String? = null,

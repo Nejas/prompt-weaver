@@ -4,7 +4,6 @@ sealed interface ChatIntent {
     data class ChangeDraft(val value: String) : ChatIntent
     data object Send : ChatIntent
     data object OpenProfile : ChatIntent
-    data object OpenCatalog : ChatIntent
     data object OpenSettings : ChatIntent
     data object RetryTemplates : ChatIntent
     data class SelectCategory(val name: String) : ChatIntent
@@ -16,6 +15,7 @@ sealed interface ChatIntent {
     data class ChangeTemplateTitle(val value: String) : ChatIntent
     data class ChangeTemplateDescription(val value: String) : ChatIntent
     data class ChangeTemplateCategory(val value: String) : ChatIntent
+    data class SetCreatingCategory(val value: Boolean) : ChatIntent
     data object CreateTemplate : ChatIntent
     data object UseSelectedTemplate : ChatIntent
     data object ConfirmDraftReplacement : ChatIntent

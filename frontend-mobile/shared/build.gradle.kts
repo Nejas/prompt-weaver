@@ -50,8 +50,8 @@ kotlin {
         }
         commonMain.dependencies {
             implementation(libs.datastore.preferences)
-            implementation(project(":feature:chat:data"))
-            implementation(project(":feature:chat:domain"))
+            api(project(":feature:chat:data"))
+            api(project(":feature:chat:domain"))
             implementation(project(":core:network"))
             implementation(project(":core:ui"))
             api(libs.koin.core)
