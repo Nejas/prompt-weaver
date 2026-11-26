@@ -17,10 +17,10 @@ class CatalogComponentTest {
         testScheduler.runCurrent()
         assertEquals(CatalogState.Empty, component.state.value)
         repo.items = listOf(item)
-        component.reload()
+        component.onIntent(CatalogIntent.Reload)
         testScheduler.runCurrent()
         assertEquals(CatalogState.Loaded(listOf(item)), component.state.value)
-        component.select("v1")
+        component.onIntent(CatalogIntent.SelectTemplate("v1"))
         assertEquals("v1", selected)
     }
 
@@ -30,7 +30,7 @@ class CatalogComponentTest {
         testScheduler.runCurrent()
         assertEquals(CatalogState.Error, component.state.value)
         repo.fail = false
-        component.reload()
+        component.onIntent(CatalogIntent.Reload)
         testScheduler.runCurrent()
         assertEquals(CatalogState.Empty, component.state.value)
     }

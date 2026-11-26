@@ -20,13 +20,13 @@ class RegistrationComponentTest {
         val repository = FakeAuthRepository()
         val component = component(repository)
 
-        component.updateFirstName("Ada")
-        component.updateLastName(" ")
-        component.updateEmail("ada@example.test")
-        component.updatePassword("short")
-        component.submit()
+        component.onIntent(RegistrationIntent.UpdateFirstName("Ada"))
+        component.onIntent(RegistrationIntent.UpdateLastName(" "))
+        component.onIntent(RegistrationIntent.UpdateEmail("ada@example.test"))
+        component.onIntent(RegistrationIntent.UpdatePassword("short"))
+        component.onIntent(RegistrationIntent.Submit)
 
-        assertEquals("Введите фамилию", component.state.value.errorMessage)
+        assertEquals(AuthUiMessage.LastNameRequired, component.state.value.error)
         assertFalse(repository.wasCalled)
     }
 
@@ -35,14 +35,14 @@ class RegistrationComponentTest {
         val repository = FakeAuthRepository(error = AuthException.EmailAlreadyRegistered())
         val component = component(repository, StandardTestDispatcher(testScheduler))
 
-        component.updateFirstName("Ada")
-        component.updateLastName("Lovelace")
-        component.updateEmail("ada@example.test")
-        component.updatePassword("long-password")
-        component.submit()
+        component.onIntent(RegistrationIntent.UpdateFirstName("Ada"))
+        component.onIntent(RegistrationIntent.UpdateLastName("Lovelace"))
+        component.onIntent(RegistrationIntent.UpdateEmail("ada@example.test"))
+        component.onIntent(RegistrationIntent.UpdatePassword("long-password"))
+        component.onIntent(RegistrationIntent.Submit)
         advanceUntilIdle()
 
-        assertEquals("Этот email уже зарегистрирован", component.state.value.errorMessage)
+        assertEquals(AuthUiMessage.EmailAlreadyRegistered, component.state.value.error)
     }
 
     private fun component(

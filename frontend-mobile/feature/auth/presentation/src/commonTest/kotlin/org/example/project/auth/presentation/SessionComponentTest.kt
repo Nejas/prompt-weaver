@@ -14,11 +14,11 @@ class SessionComponentTest {
         var left = false
         val component = SessionComponent(DefaultComponentContext(LifecycleRegistry()), FakeSessions(),
             StandardTestDispatcher(testScheduler), { left = true }, {})
-        component.logout()
+        component.onIntent(SessionIntent.Logout)
         testScheduler.runCurrent()
         assertEquals(false, left)
         assertEquals(true, component.state.value.loggedOut)
-        component.continueAfterLogout()
+        component.onIntent(SessionIntent.ContinueAfterLogout)
         assertEquals(true, left)
     }
 
