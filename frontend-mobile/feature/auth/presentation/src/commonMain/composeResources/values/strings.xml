@@ -20,7 +20,7 @@
     <string name="auth_session_logged_in">Вы вошли в аккаунт</string>
     <string name="auth_session_saved">Ваша сессия сохранена на устройстве</string>
     <string name="auth_continue">Продолжить</string>
-    <string name="auth_open_catalog">Открыть каталог</string>
+    <string name="auth_open_chat">Открыть чат</string>
     <string name="auth_logout">Выйти</string>
     <string name="auth_error_empty_credentials">Введите email и пароль</string>
     <string name="auth_error_invalid_credentials">Неверный email или пароль</string>

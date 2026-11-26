@@ -6,4 +6,5 @@ sealed interface DetailsIntent {
     data object Validate : DetailsIntent
     data object Compose : DetailsIntent
     data object Back : DetailsIntent
+    data object Apply : DetailsIntent
 }

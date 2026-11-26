@@ -10,7 +10,7 @@ import platform.Foundation.NSBundle
 private val rootComponent by lazy {
     val gatewayUrl = NSBundle.mainBundle.objectForInfoDictionaryKey("GatewayBaseUrl") as? String
         ?: error("GatewayBaseUrl is not configured")
-    val dependencies = initializeDependencies(gatewayUrl, IosTokenStore())
+    val dependencies = initializeDependencies(gatewayUrl, IosTokenStore(), IosLocalChatTemplateStore())
     createAppComponent(dependencies, DefaultComponentContext(ApplicationLifecycle()))
 }
 

@@ -19,7 +19,7 @@ class SessionComponent(
     private val sessions: SessionRepository,
     dispatcher: CoroutineDispatcher,
     private val onLoggedOut: () -> Unit,
-    val browseCatalog: () -> Unit,
+    private val openChat: () -> Unit,
 ) : ComponentContext by context {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(SessionState())
@@ -31,7 +31,7 @@ class SessionComponent(
         when (intent) {
             SessionIntent.Logout -> logout()
             SessionIntent.ContinueAfterLogout -> continueAfterLogout()
-            SessionIntent.BrowseCatalog -> browseCatalog()
+            SessionIntent.OpenChat -> if (!state.value.leaving && !state.value.loggedOut) openChat()
         }
     }
 

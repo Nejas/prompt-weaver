@@ -42,8 +42,8 @@ fun SessionScreenContent(
             )
         } else {
             CompliTextButton(
-                text = stringResource(Res.string.auth_open_catalog),
-                onClick = { onIntent(SessionIntent.BrowseCatalog) },
+                text = stringResource(Res.string.auth_open_chat),
+                onClick = { onIntent(SessionIntent.OpenChat) },
                 modifier = Modifier.fillMaxWidth()
             )
             CompliPrimaryButton(

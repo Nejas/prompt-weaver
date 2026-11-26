@@ -17,11 +17,11 @@ class ProfileComponentTest {
         assertTrue(returned)
     }
 
-    @Test fun openCatalogIntentOpensCatalog() {
-        var catalogOpened = false
-        val component = ProfileComponent(context = DefaultComponentContext(LifecycleRegistry()), onCatalog = { catalogOpened = true })
-        component.onIntent(ProfileIntent.OpenCatalog)
-        assertTrue(catalogOpened)
+    @Test fun openChatIntentOpensChat() {
+        var chatOpened = false
+        val component = ProfileComponent(context = DefaultComponentContext(LifecycleRegistry()), onChat = { chatOpened = true })
+        component.onIntent(ProfileIntent.OpenChat)
+        assertTrue(chatOpened)
     }
 
     @Test fun logoutIntentTriggersLogout() {

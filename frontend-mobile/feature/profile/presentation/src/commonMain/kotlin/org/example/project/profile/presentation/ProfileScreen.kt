@@ -25,7 +25,7 @@ fun ProfileScreen(component: ProfileComponent) {
 @Composable
 fun ProfileScreenContent(state: ProfileState, onIntent: (ProfileIntent) -> Unit) {
     Column(
-        Modifier.fillMaxSize().safeContentPadding().verticalScroll(rememberScrollState())
+        Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState())
             .padding(horizontal = CompliTheme.spacing.large),
         verticalArrangement = Arrangement.spacedBy(CompliTheme.spacing.large)
     ) {
@@ -73,10 +73,11 @@ fun ProfileScreenContent(state: ProfileState, onIntent: (ProfileIntent) -> Unit)
         Spacer(Modifier.height(CompliTheme.spacing.medium))
 
         CompliPrimaryButton(
-            text = "Каталог шаблонов",
-            onClick = { onIntent(ProfileIntent.OpenCatalog) },
+            text = "Вернуться в чат",
+            onClick = { onIntent(ProfileIntent.OpenChat) },
             modifier = Modifier.fillMaxWidth()
         )
+        CompliTextButton(text = "Настройки", onClick = { onIntent(ProfileIntent.OpenSettings) }, modifier = Modifier.fillMaxWidth())
 
         CompliTextButton(
             text = "Выйти из аккаунта",

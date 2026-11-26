@@ -11,6 +11,7 @@ class DetailsComponent(
     private val versionId: String,
     private val repository: CatalogRepository,
     dispatcher: CoroutineDispatcher,
+    private val onApply: ((String) -> Unit)? = null,
     val back: () -> Unit,
 ) : ComponentContext by context {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -18,6 +19,7 @@ class DetailsComponent(
     val state: StateFlow<DetailsState> = mutableState.asStateFlow()
     private var job: Job? = null
     private var composeJob: Job? = null
+    val canApply: Boolean get() = onApply != null
 
     init {
         lifecycle.doOnDestroy { scope.cancel() }
@@ -31,7 +33,14 @@ class DetailsComponent(
             DetailsIntent.Validate -> validate()
             DetailsIntent.Compose -> compose()
             DetailsIntent.Back -> back()
+            DetailsIntent.Apply -> apply()
         }
+    }
+
+    private fun apply() {
+        val current = mutableState.value as? DetailsState.Loaded ?: return
+        val result = current.result?.takeIf { it.isNotBlank() } ?: return
+        onApply?.invoke(result)
     }
 
     fun reload() {

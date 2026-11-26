@@ -8,6 +8,36 @@ import org.example.project.catalog.domain.*
 import kotlin.test.*
 
 class DetailsComponentTest {
+    @Test fun applyUsesOnlyCurrentSuccessfulResult() = runTest {
+        val template = TemplateDetails(TemplateSummary("v1", "T", "", "", ""), "", emptyList())
+        val repository = DetailsFake(template)
+        val applied = mutableListOf<String>()
+        val component = DetailsComponent(
+            DefaultComponentContext(LifecycleRegistry()), "v1", repository,
+            StandardTestDispatcher(testScheduler), onApply = { applied += it }, back = {},
+        )
+        component.onIntent(DetailsIntent.Apply)
+        testScheduler.runCurrent()
+        component.onIntent(DetailsIntent.Apply)
+        assertTrue(applied.isEmpty())
+
+        component.onIntent(DetailsIntent.SetValue("x", "hello"))
+        component.onIntent(DetailsIntent.Compose)
+        testScheduler.runCurrent()
+        assertTrue(applied.isEmpty())
+        component.onIntent(DetailsIntent.Apply)
+        assertEquals(listOf("hello"), applied)
+
+        component.onIntent(DetailsIntent.SetValue("x", "changed"))
+        component.onIntent(DetailsIntent.Apply)
+        assertEquals(listOf("hello"), applied)
+        repository.fail = true
+        component.onIntent(DetailsIntent.Compose)
+        testScheduler.runCurrent()
+        component.onIntent(DetailsIntent.Apply)
+        assertEquals(listOf("hello"), applied)
+    }
+
     @Test fun composeFailureCanBeRetried() = runTest {
         val repo = DetailsFake(TemplateDetails(TemplateSummary("v1", "T", "", "", ""), "", emptyList()))
         val component = DetailsComponent(DefaultComponentContext(LifecycleRegistry()), "v1", repo, StandardTestDispatcher(testScheduler)) {}
@@ -50,15 +80,6 @@ class DetailsComponentTest {
         assertTrue((component.state.value as DetailsState.Loaded).errors.isEmpty())
         component.onIntent(DetailsIntent.Back)
         assertTrue(backed)
-    }
-    @Test fun navigationOpensDetailsAndReturnsToList() = runTest {
-        val repo = DetailsFake(TemplateDetails(TemplateSummary("v1", "", "", "", ""), "", emptyList()))
-        val root = CatalogRoot(DefaultComponentContext(LifecycleRegistry()), repo, StandardTestDispatcher(testScheduler))
-        val catalog = (root.stack.value.active.instance as CatalogRoot.Child.List).component
-        catalog.onIntent(CatalogIntent.SelectTemplate("v1"))
-        val details = assertIs<CatalogRoot.Child.Details>(root.stack.value.active.instance)
-        details.component.onIntent(DetailsIntent.Back)
-        assertIs<CatalogRoot.Child.List>(root.stack.value.active.instance)
     }
     @Test fun errorAndRetry() = runTest {
         val repo = DetailsFake(TemplateDetails(TemplateSummary("v1", "", "", "", ""), "", emptyList()))
